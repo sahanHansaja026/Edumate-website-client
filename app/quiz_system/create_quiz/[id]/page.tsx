@@ -2,15 +2,32 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { useParams, useRouter } from "next/navigation";
 import { API_BASE_URL } from "@/app/config/api";
 import { getUser } from "@/app/services/authService";
+import {
+    Type,
+    Calendar,
+    TextQuote,
+    HelpCircle,
+    CheckSquare,
+    Square,
+    X,
+    Save,
+    ArrowLeft,
+    Trophy,
+    Shuffle,
+    Layers,
+    Activity
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 
-export default function CreateQuizForm() {
+export default function CreateQuizPage() {
     const params = useParams();
+    const router = useRouter();
     const id = params.id as string;
+
+    // ✅ State Variables
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [attempts, setAttempts] = useState("unlimited");
@@ -18,21 +35,20 @@ export default function CreateQuizForm() {
     const [closeDate, setCloseDate] = useState("");
     const [isGraded, setIsGraded] = useState(true);
     const [shuffleQuestions, setShuffleQuestions] = useState(false);
-    const router = useRouter();
 
     const [user, setUser] = useState<{ id: number; email: string } | null>(null);
     const [quota, setQuota] = useState<any>(null);
-    
+
     // load user
     useEffect(() => {
         const currentUser = getUser();
         setUser(currentUser);
     }, []);
 
+    // load quota
     useEffect(() => {
         const loadQuota = async () => {
             if (!user) return;
-
             try {
                 const res = await fetch(`${API_BASE_URL}/quota/quiz/${user.id}`);
                 const data = await res.json();
@@ -41,13 +57,23 @@ export default function CreateQuizForm() {
                 console.error(err);
             }
         };
-
         loadQuota();
     }, [user]);
 
+    // ✅ Form Reset Handler
+    const handleReset = () => {
+        setTitle("");
+        setDescription("");
+        setAttempts("unlimited");
+        setOpenDate("");
+        setCloseDate("");
+        setIsGraded(true);
+        setShuffleQuestions(false);
+    };
+
+    // ✅ Submit Handler
     const handleSubmit = async () => {
         try {
-
             if (!user) {
                 alert("User not found");
                 return;
@@ -68,7 +94,6 @@ export default function CreateQuizForm() {
             }
 
             const formData = new FormData();
-
             formData.append("module_id", id);
             formData.append("title", title);
             formData.append("description", description || "");
@@ -85,16 +110,7 @@ export default function CreateQuizForm() {
             });
 
             alert("Quiz created successfully!");
-
-            // reset
-            setTitle("");
-            setDescription("");
-            setAttempts("unlimited");
-            setOpenDate("");
-            setCloseDate("");
-            setIsGraded(true);
-            setShuffleQuestions(false);
-
+            handleReset();
         } catch (err) {
             console.error(err);
             alert("Error creating quiz");
@@ -102,118 +118,240 @@ export default function CreateQuizForm() {
     };
 
     return (
-        <Card className="rounded-2xl shadow-sm">
-            <CardContent className="p-6 space-y-5">
-
-                <h3 className="text-lg font-semibold">
-                    Create New Quiz
-                </h3>
-                <h1>module_id :  {id}</h1>
-                {/* TITLE */}
-                <input
-                    type="text"
-                    placeholder="Quiz Title"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    className="w-full border rounded-lg px-3 py-2"
-                />
-
-                {/* DESCRIPTION */}
-                <textarea
-                    placeholder="Description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    className="w-full border rounded-lg px-3 py-2"
-                />
-
-                {/* ATTEMPTS */}
-                <div>
-                    <label className="text-sm">Attempt Count</label>
-                    <select
-                        value={attempts}
-                        onChange={(e) => setAttempts(e.target.value)}
-                        className="w-full border rounded-lg px-3 py-2"
+        <div className="min-h-screen bg-white text-gray-900 selection:bg-gray-100">
+            {/* Top Minimal Action Header */}
+            <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-4 sm:px-8 lg:px-12 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => router.back()}
+                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-500 hover:text-gray-900"
+                        title="Go back"
                     >
-                        <option value="unlimited">Unlimited</option>
-                        <option value="1">1 Attempt</option>
-                        <option value="2">2 Attempts</option>
-                        <option value="3">3 Attempts</option>
-                    </select>
-                </div>
-
-                {/* DATES */}
-                <div className="grid md:grid-cols-2 gap-4">
-
+                        <ArrowLeft className="w-5 h-5" />
+                    </button>
                     <div>
-                        <label className="text-sm">Open Date</label>
-                        <input
-                            type="datetime-local"
-                            value={openDate}
-                            onChange={(e) => setOpenDate(e.target.value)}
-                            className="w-full border rounded-lg px-3 py-2"
-                        />
+                        <h1 className="text-lg font-bold tracking-tight text-gray-900">
+                            Assessment Panel
+                        </h1>
                     </div>
-
-                    <div>
-                        <label className="text-sm">Close Date</label>
-                        <input
-                            type="datetime-local"
-                            value={closeDate}
-                            onChange={(e) => setCloseDate(e.target.value)}
-                            className="w-full border rounded-lg px-3 py-2"
-                        />
-                    </div>
-
                 </div>
 
-                {/* OPTIONS */}
-                <div className="space-y-2">
-
-                    <label className="flex items-center gap-2 text-sm">
-                        <input
-                            type="checkbox"
-                            checked={isGraded}
-                            onChange={() => setIsGraded(!isGraded)}
-                        />
-                        Graded Quiz
-                    </label>
-
-                    <label className="flex items-center gap-2 text-sm">
-                        <input
-                            type="checkbox"
-                            checked={shuffleQuestions}
-                            onChange={() => setShuffleQuestions(!shuffleQuestions)}
-                        />
-                        Shuffle Questions
-                    </label>
-
-                </div>
-
-                {/* ACTIONS */}
-                <div className="flex justify-end gap-3">
-
+                {/* Desktop Global Actions */}
+                <div className="hidden sm:flex items-center gap-3">
                     <Button
-                        variant="outline"
-                        onClick={() => {
-                            setTitle("");
-                            setDescription("");
-                            setAttempts("unlimited");
-                            setOpenDate("");
-                            setCloseDate("");
-                            setIsGraded(true);
-                            setShuffleQuestions(false);
-                        }}
+                        variant="ghost"
+                        onClick={handleReset}
+                        className="text-gray-500 hover:text-gray-900 hover:bg-gray-100 px-4 h-9 text-sm font-medium"
                     >
-                        Cancel
+                        Reset Form
                     </Button>
-
-                    <Button onClick={handleSubmit}>
+                    <Button
+                        onClick={handleSubmit}
+                        className="bg-gray-900 text-white hover:bg-gray-800 px-5 h-9 text-sm font-medium shadow-sm transition-all"
+                    >
                         Save Quiz
                     </Button>
-
                 </div>
+            </header>
 
-            </CardContent>
-        </Card>
+            {/* Main Workspace Frame */}
+            <main className="max-w-7xl mx-auto px-4 py-8 sm:px-8 lg:px-12 grid grid-cols-1 lg:grid-cols-12 gap-10">
+
+                {/* Left Structural Column: Anchors, Metadata & Quota Alert */}
+                <section className="lg:col-span-4 lg:sticky lg:top-24 h-fit space-y-6">
+                    <div className="space-y-2">
+                        <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-gray-100 text-xs font-semibold text-gray-700">
+                            <Layers className="w-3.5 h-3.5" /> Assessment Engine
+                        </div>
+                        <h2 className="text-2xl font-black tracking-tight sm:text-3xl">
+                            Create New Quiz
+                        </h2>
+                        <p className="text-sm text-gray-500 leading-relaxed">
+                            Configure online assessments, grading behaviors, security parameters, and dynamic constraints for students.
+                        </p>
+                    </div>
+
+                    {/* Metadata Context Box */}
+                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
+                        <div className="text-xs font-bold uppercase tracking-wider text-gray-400">
+                            Target Assignment Context
+                        </div>
+                        <div>
+                            <span className="text-xs text-gray-500 block">Identified Module Reference</span>
+                            <span className="text-sm font-mono font-bold text-gray-900 select-all">
+                                {id || "Undefined Node"}
+                            </span>
+                        </div>
+                        {quota && (
+                            <div className="pt-2 border-t border-gray-200 flex items-center justify-between text-xs">
+                                <span className="text-gray-500">Usage Status:</span>
+                                <span className={`font-semibold ${quota.can_create ? "text-gray-700" : "text-red-600"}`}>
+                                    {quota.can_create ? "Quota Verified" : "Limit Reached"}
+                                </span>
+                            </div>
+                        )}
+                    </div>
+                </section>
+
+                {/* Right Structural Column: Full Page Inputs Form Canvas */}
+                <section className="lg:col-span-8 space-y-10 pb-24">
+
+                    {/* Block 1: Core Information */}
+                    <div className="space-y-5">
+                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-200 pb-2">
+                            01. General Specifications
+                        </h3>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-4 gap-5">
+                            <div className="sm:col-span-3 space-y-1.5">
+                                <label className="text-xs font-bold uppercase tracking-wider text-gray-700 flex items-center gap-2">
+                                    <Type className="w-3.5 h-3.5 text-gray-400" /> Quiz Title
+                                </label>
+                                <input
+                                    type="text"
+                                    placeholder="e.g., Mid-Term Theoretical Evaluation"
+                                    value={title}
+                                    onChange={(e) => setTitle(e.target.value)}
+                                    className="w-full text-gray-900 bg-white border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-gray-900 transition-all placeholder:text-gray-400 shadow-sm"
+                                />
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold uppercase tracking-wider text-gray-700 flex items-center gap-2">
+                                    <Activity className="w-3.5 h-3.5 text-gray-400" /> Attempt Count
+                                </label>
+                                <select
+                                    value={attempts}
+                                    onChange={(e) => setAttempts(e.target.value)}
+                                    className="w-full text-gray-900 bg-white border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-gray-900 transition-all shadow-sm"
+                                >
+                                    <option value="unlimited">Unlimited</option>
+                                    <option value="1">1 Attempt</option>
+                                    <option value="2">2 Attempts</option>
+                                    <option value="3">3 Attempts</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-bold uppercase tracking-wider text-gray-700 flex items-center gap-2">
+                                <TextQuote className="w-3.5 h-3.5 text-gray-400" /> Instructional Rubric
+                            </label>
+                            <textarea
+                                placeholder="Specify evaluation topics, guidelines, testing parameters, or academic honesty frameworks..."
+                                rows={4}
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                className="w-full text-gray-900 bg-white border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-gray-900 transition-all placeholder:text-gray-400 resize-y shadow-sm"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Block 2: Availability Schedule */}
+                    <div className="space-y-5">
+                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-200 pb-2">
+                            02. Access Timeline
+                        </h3>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold uppercase tracking-wider text-gray-700 flex items-center gap-2">
+                                    <Calendar className="w-3.5 h-3.5 text-gray-400" /> Target Open Window
+                                </label>
+                                <input
+                                    type="datetime-local"
+                                    value={openDate}
+                                    onChange={(e) => setOpenDate(e.target.value)}
+                                    className="w-full text-gray-900 bg-white border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-gray-900 transition-all shadow-sm"
+                                />
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold uppercase tracking-wider text-gray-700 flex items-center gap-2">
+                                    <Calendar className="w-3.5 h-3.5 text-gray-400" /> Strict Close Window
+                                </label>
+                                <input
+                                    type="datetime-local"
+                                    value={closeDate}
+                                    onChange={(e) => setCloseDate(e.target.value)}
+                                    className="w-full text-gray-900 bg-white border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-gray-900 transition-all shadow-sm"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Block 3: Dynamic Delivery & Grading Options */}
+                    <div className="space-y-5">
+                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-200 pb-2">
+                            03. Execution Controls
+                        </h3>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {/* Option Row: Graded Toggle */}
+                            <div
+                                onClick={() => setIsGraded(!isGraded)}
+                                className="flex items-start gap-3 p-4 border border-gray-200 rounded-xl bg-white hover:bg-gray-50/50 transition-colors cursor-pointer select-none group"
+                            >
+                                <div className="mt-0.5 text-gray-900">
+                                    {isGraded ? (
+                                        <CheckSquare className="w-4 h-4 transition-transform group-active:scale-95" />
+                                    ) : (
+                                        <Square className="w-4 h-4 text-gray-300 transition-transform group-active:scale-95" />
+                                    )}
+                                </div>
+                                <div className="flex flex-col space-y-0.5">
+                                    <span className="text-sm font-bold text-gray-900 flex items-center gap-1.5">
+                                        <Trophy className="w-3.5 h-3.5 text-gray-500" /> Evaluated Credit
+                                    </span>
+                                    <span className="text-xs text-gray-500 leading-normal">
+                                        Calculate this task scores into user performance dashboards.
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Option Row: Shuffle Toggle */}
+                            <div
+                                onClick={() => setShuffleQuestions(!shuffleQuestions)}
+                                className="flex items-start gap-3 p-4 border border-gray-200 rounded-xl bg-white hover:bg-gray-50/50 transition-colors cursor-pointer select-none group"
+                            >
+                                <div className="mt-0.5 text-gray-900">
+                                    {shuffleQuestions ? (
+                                        <CheckSquare className="w-4 h-4 transition-transform group-active:scale-95" />
+                                    ) : (
+                                        <Square className="w-4 h-4 text-gray-300 transition-transform group-active:scale-95" />
+                                    )}
+                                </div>
+                                <div className="flex flex-col space-y-0.5">
+                                    <span className="text-sm font-bold text-gray-900 flex items-center gap-1.5">
+                                        <Shuffle className="w-3.5 h-3.5 text-gray-500" /> Randomize Order
+                                    </span>
+                                    <span className="text-xs text-gray-500 leading-normal">
+                                        Shuffle presentation structures dynamically per user view instance.
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Mobile Global Actions Footer Block */}
+                    <div className="flex flex-col-reverse sm:hidden items-center gap-3 pt-6 border-t border-gray-200">
+                        <Button
+                            variant="outline"
+                            onClick={handleReset}
+                            className="w-full border-gray-300 text-gray-700 h-11 text-sm font-semibold"
+                        >
+                            <X className="w-4 h-4 mr-2" /> Cancel Changes
+                        </Button>
+                        <Button
+                            onClick={handleSubmit}
+                            className="w-full bg-gray-900 text-white hover:bg-gray-800 h-11 text-sm font-semibold shadow-sm"
+                        >
+                            <Save className="w-4 h-4 mr-2" /> Initialize Quiz
+                        </Button>
+                    </div>
+
+                </section>
+            </main>
+        </div>
     );
 }

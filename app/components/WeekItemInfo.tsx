@@ -74,7 +74,7 @@ export default function WeekItemInfo({ moduleId }: Props) {
 
     const fetchData = async () => {
         try {
-            // MODULE
+            // watch video
             const moduleRes = await fetch(`${API_BASE_URL}/modules/${moduleId}`);
 
             if (!moduleRes.ok) {

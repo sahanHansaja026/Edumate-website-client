@@ -30,7 +30,7 @@ export default function ProfileForm() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [user, setUser] = useState<{ id: number; email: string } | null>(null);
-  const [loading, setLoading] = useState(true); // show loading while fetching
+  const [loading, setLoading] = useState(true);
 
   const [formData, setFormData] = useState<FormData>({
     username: "",
@@ -54,10 +54,12 @@ export default function ProfileForm() {
   useEffect(() => {
     const currentUser = getUser();
     setUser(currentUser);
-  
-    if (!currentUser) return;
-  
-    // Fetch profile by email
+
+    if (!currentUser) {
+      setLoading(false);
+      return;
+    }
+
     fetch(`${API_BASE_URL}/profiles/?email=${currentUser.email}`)
       .then((res) => {
         if (!res.ok) throw new Error("Profile not found");
@@ -65,8 +67,7 @@ export default function ProfileForm() {
       })
       .then((profile) => {
         if (!profile) return;
-  
-        // Populate form
+
         setFormData({
           username: profile.username || "",
           about: profile.about || "",
@@ -78,21 +79,19 @@ export default function ProfileForm() {
           region: profile.region || "",
           postalCode: profile.postalCode || "",
           notifications: {
-            comments: profile.notifications.comments,
-            candidates: profile.notifications.candidates,
-            offers: profile.notifications.offers,
-            push: profile.notifications.push || "everything",
+            comments: profile.notifications?.comments ?? true,
+            candidates: profile.notifications?.candidates ?? false,
+            offers: profile.notifications?.offers ?? false,
+            push: profile.notifications?.push || "everything",
           },
         });
-  
-        // Photos
+
         if (profile.photo) setPhotoPreview(`data:image/jpeg;base64,${profile.photo}`);
         if (profile.coverPhoto) setCoverPreview(`data:image/jpeg;base64,${profile.coverPhoto}`);
       })
       .catch((err) => console.error("Error fetching profile:", err))
       .finally(() => setLoading(false));
   }, []);
-  
 
   const handleInputChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -150,16 +149,13 @@ export default function ProfileForm() {
     if (formData.coverPhoto) form.append("coverPhoto", formData.coverPhoto);
 
     try {
-      // Check if user has profile
-      const resCheck = await fetch(
-        `${API_BASE_URL}/profiles/?email=${user.email}`
-      );
+      const resCheck = await fetch(`${API_BASE_URL}/profiles/?email=${user.email}`);
       const existingProfile = await resCheck.json();
 
       const url =
         existingProfile && existingProfile.length > 0
-          ? `${API_BASE_URL}/profiles/${existingProfile[0].id}/` // update
-          : `${API_BASE_URL}/profiles/`; // create
+          ? `${API_BASE_URL}/profiles/${existingProfile[0].id}/`
+          : `${API_BASE_URL}/profiles/`;
 
       const method = existingProfile && existingProfile.length > 0 ? "PUT" : "POST";
 
@@ -183,210 +179,269 @@ export default function ProfileForm() {
     }
   };
 
-  if (loading) return <p className="text-white p-6">Loading profile...</p>;
-
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center font-medium text-gray-600">
+        Loading workspace profile...
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-100 p-6">
-      <form onSubmit={handleSubmit} className="max-w-5xl mx-auto space-y-12">
-        {/* Profile Section */}
-        <SectionGrid
-          title="Profile"
-          description="This information will be displayed publicly. Be careful what you share."
-        >
-          <Input
-            label="Username"
-            name="username"
-            value={formData.username}
-            onChange={handleInputChange}
-          />
-          <Textarea
-            label="About"
-            name="about"
-            value={formData.about}
-            onChange={handleInputChange}
-            helperText="Write a few sentences about yourself."
-          />
-          <FileInput
-            label="Photo"
-            name="photo"
-            icon={
-              photoPreview ? (
-                <img
-                  src={photoPreview}
-                  className="h-12 w-12 rounded-full object-cover"
-                  alt="Profile Preview"
-                />
-              ) : (
-                <UserCircleIcon className="h-12 w-12 text-gray-400" />
-              )
-            }
-            onChange={handleFileChange}
-          />
+    <div className="min-h-screen bg-white text-gray-900 antialiased">
+      <form onSubmit={handleSubmit} className="w-full">
 
-          <FileInput
-            label="Cover photo"
-            name="coverPhoto"
-            icon={
-              coverPreview ? (
-                <img
-                  src={coverPreview}
-                  className="h-12 w-12 rounded-md object-cover"
-                  alt="Cover Preview"
-                />
-              ) : (
-                <PhotoIcon className="h-12 w-12 text-gray-400" />
-              )
-            }
-            onChange={handleFileChange}
-            dragDrop
-          />
-        </SectionGrid>
+        {/* Top Sticky Header Bar */}
+        <header className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-gray-200 px-4 py-4 md:px-8">
+          <div className="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-3">
+                <h1 className="text-xl font-bold tracking-tight text-gray-900 md:text-2xl">
+                  Account Settings
+                </h1>
+                {user && (
+                  <span className="text-xs font-mono bg-gray-100 text-gray-600 px-2.5 py-0.5 rounded border border-gray-200">
+                    UID: {user.id}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-gray-500 mt-0.5 hidden sm:block">
+                Manage your formal instructor identity and communication rules
+              </p>
+            </div>
 
-        {/* Personal Information Section */}
-        <SectionGrid
-          title="Personal Information"
-          description="Use a permanent address where you can receive mail."
-        >
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <Input
-              label="First name"
-              name="firstName"
-              value={formData.firstName}
-              onChange={handleInputChange}
-            />
-            <Input
-              label="Last name"
-              name="lastName"
-              value={formData.lastName}
-              onChange={handleInputChange}
-            />
+            {/* Global Actions Block */}
+            <div className="flex items-center gap-3 shrink-0">
+              <button
+                type="button"
+                className="flex-1 sm:flex-initial rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition shadow-sm text-center"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="flex-1 sm:flex-initial rounded-md bg-gray-900 px-5 py-2 text-sm font-semibold text-white hover:bg-gray-800 active:bg-gray-950 transition shadow-sm text-center"
+              >
+                Save Changes
+              </button>
+            </div>
           </div>
-          <Input
-            label="Email address"
-            name="email"
-            type="email"
-            value={user?.email || ""}
-            onChange={handleInputChange}
-          />
+        </header>
 
-          <Select
-            label="Country"
-            name="country"
-            value={formData.country}
-            options={["United States", "Canada", "Mexico"]}
-            onChange={handleInputChange}
-          />
-          <Input
-            label="Street address"
-            name="streetAddress"
-            value={formData.streetAddress}
-            onChange={handleInputChange}
-          />
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <Input
-              label="City"
-              name="city"
-              value={formData.city}
-              onChange={handleInputChange}
-            />
-            <Input
-              label="State / Province"
-              name="region"
-              value={formData.region}
-              onChange={handleInputChange}
-            />
-            <Input
-              label="ZIP / Postal code"
-              name="postalCode"
-              value={formData.postalCode}
-              onChange={handleInputChange}
-            />
-          </div>
-        </SectionGrid>
+        {/* Form Body - Full Width Spanning Constraint */}
+        <main className="max-w-6xl mx-auto px-4 py-8 md:px-8 md:py-12 space-y-12 divide-y divide-gray-200">
 
-        {/* Notifications Section */}
-        <SectionGrid
-          title="Notifications"
-          description="We'll always let you know about important changes, but you pick what else you want to hear about."
-        >
-          <div className="space-y-4">
-            <Checkbox
-              label="Comments"
-              name="comments"
-              checked={formData.notifications.comments}
-              onChange={handleInputChange}
-              helperText="Get notified when someone posts a comment."
-            />
-            <Checkbox
-              label="Candidates"
-              name="candidates"
-              checked={formData.notifications.candidates}
-              onChange={handleInputChange}
-              helperText="Get notified when a candidate applies for a job."
-            />
-            <Checkbox
-              label="Offers"
-              name="offers"
-              checked={formData.notifications.offers}
-              onChange={handleInputChange}
-              helperText="Get notified when a candidate accepts or rejects an offer."
-            />
-            <RadioGroup
-              label="Push notifications"
-              name="push"
-              options={[
-                { label: "Everything", value: "everything" },
-                { label: "Same as email", value: "email" },
-                { label: "No push notifications", value: "none" },
-              ]}
-              selected={formData.notifications.push}
-              onChange={(value) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  notifications: { ...prev.notifications, push: value },
-                }))
-              }
-            />
-          </div>
-        </SectionGrid>
-
-        {/* Form Actions */}
-        <div className="flex justify-end gap-4">
-          <button
-            type="button"
-            className="text-gray-300 font-semibold hover:text-white"
+          {/* Section 1: Public Profile Identity */}
+          <SectionGrid
+            title="Identity Details"
+            description="This parameters build up your dynamic public catalog profile presentation footprint."
           >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-6 py-2 rounded-md shadow"
+            <Input
+              label="Username Address"
+              name="username"
+              value={formData.username}
+              onChange={handleInputChange}
+              prefix="EduMate/"
+            />
+
+            <Textarea
+              label="Biography Overview"
+              name="about"
+              value={formData.about}
+              onChange={handleInputChange}
+              helperText="Brief summary highlighting your experience parameters or instructional values."
+            />
+
+            {/* Avatars Blocks */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
+                  Profile Avatar Picture
+                </label>
+                <div className="flex items-center gap-4">
+                  {photoPreview ? (
+                    <img
+                      src={photoPreview}
+                      className="h-14 w-14 rounded-full object-cover border border-gray-200 shadow-sm"
+                      alt="Profile Preview"
+                    />
+                  ) : (
+                    <UserCircleIcon className="h-14 w-14 text-gray-300" />
+                  )}
+                  <FileInput name="photo" onChange={handleFileChange} />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
+                  Cover Showcase Layout
+                </label>
+                <div className="flex items-center gap-4">
+                  {coverPreview ? (
+                    <img
+                      src={coverPreview}
+                      className="h-14 w-24 rounded object-cover border border-gray-200 shadow-sm"
+                      alt="Cover Preview"
+                    />
+                  ) : (
+                    <PhotoIcon className="h-14 w-14 text-gray-300" />
+                  )}
+                  <FileInput name="coverPhoto" onChange={handleFileChange} dragDrop />
+                </div>
+              </div>
+            </div>
+          </SectionGrid>
+
+          {/* Section 2: Personal Registry Information */}
+          <SectionGrid
+            title="Personal Location Registry"
+            description="Private physical correspondence addresses verification layer profiles."
+            className="pt-12"
           >
-            Save
-          </button>
-        </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <Input
+                label="First Name"
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleInputChange}
+              />
+              <Input
+                label="Last Name"
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleInputChange}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-500">
+                Registered Email Connection
+              </label>
+              <input
+                type="email"
+                value={user?.email || ""}
+                disabled
+                className="w-full rounded-md bg-gray-50 border border-gray-200 px-3 py-2 text-sm text-gray-500 outline-none cursor-not-allowed"
+              />
+            </div>
+
+            <Select
+              label="Country Region"
+              name="country"
+              value={formData.country}
+              options={["United States", "Canada", "Mexico", "United Kingdom", "Sri Lanka"]}
+              onChange={handleInputChange}
+            />
+
+            <Input
+              label="Street Real Estate Address"
+              name="streetAddress"
+              value={formData.streetAddress}
+              onChange={handleInputChange}
+            />
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              <Input
+                label="City / Township"
+                name="city"
+                value={formData.city}
+                onChange={handleInputChange}
+              />
+              <Input
+                label="State / District Province"
+                name="region"
+                value={formData.region}
+                onChange={handleInputChange}
+              />
+              <Input
+                label="Postal Routing ZIP"
+                name="postalCode"
+                value={formData.postalCode}
+                onChange={handleInputChange}
+              />
+            </div>
+          </SectionGrid>
+
+          {/* Section 3: Notification Metrics */}
+          <SectionGrid
+            title="Communication Metrics"
+            description="Configure real-time automation alerts regarding student operations."
+            className="pt-12 pb-6"
+          >
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-4">
+                  Email Alert Routing Rules
+                </h3>
+                <div className="space-y-4">
+                  <Checkbox
+                    label="Discussion Board Comments"
+                    name="comments"
+                    checked={formData.notifications.comments}
+                    onChange={handleInputChange}
+                    helperText="Alert immediately when comments register on published course blocks."
+                  />
+                  <Checkbox
+                    label="Candidate Admission Enrolment"
+                    name="candidates"
+                    checked={formData.notifications.candidates}
+                    onChange={handleInputChange}
+                    helperText="Notify instantly when new students apply or request module tokens."
+                  />
+                  <Checkbox
+                    label="Promotional Corporate Offers"
+                    name="offers"
+                    checked={formData.notifications.offers}
+                    onChange={handleInputChange}
+                    helperText="Get notified upon custom institutional purchase tier evaluations."
+                  />
+                </div>
+              </div>
+
+              <div className="border-t border-gray-100 pt-6">
+                <RadioGroup
+                  label="Device Telemetry Push Deliveries"
+                  name="push"
+                  options={[
+                    { label: "Deliver everything instantly", value: "everything" },
+                    { label: "Sync identical with email protocols", value: "email" },
+                    { label: "Deactivate push pipelines entirely", value: "none" },
+                  ]}
+                  selected={formData.notifications.push}
+                  onChange={(value) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      notifications: { ...prev.notifications, push: value },
+                    }))
+                  }
+                />
+              </div>
+            </div>
+          </SectionGrid>
+
+        </main>
       </form>
     </div>
   );
 }
 
-/* --- Section Grid Layout (left title/description, right inputs) --- */
+/* --- Helper Structural Sub-Components Layout System --- */
+
 const SectionGrid: React.FC<{
   title: string;
   description: string;
   children: React.ReactNode;
-}> = ({ title, description, children }) => (
-  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 border-b border-gray-700 pb-8">
-    <div className="text-sm font-medium text-gray-400 space-y-1">
-      <h2 className="text-white">{title}</h2>
-      <p>{description}</p>
+  className?: string;
+}> = ({ title, description, children, className = "" }) => (
+  <div className={`grid grid-cols-1 lg:grid-cols-3 gap-8 ${className}`}>
+    <div className="lg:col-span-1 space-y-1.5">
+      <h2 className="text-base font-bold text-gray-900 tracking-tight">{title}</h2>
+      <p className="text-sm text-gray-500 leading-relaxed">{description}</p>
     </div>
-    <div className="md:col-span-2 space-y-6">{children}</div>
+    <div className="lg:col-span-2 space-y-6">{children}</div>
   </div>
 );
 
-/* --- Input Components --- */
 const Input: React.FC<{
   label: string;
   name: string;
@@ -395,11 +450,11 @@ const Input: React.FC<{
   onChange: (e: ChangeEvent<HTMLInputElement>) => void;
   prefix?: string;
 }> = ({ label, name, type = "text", value, onChange, prefix }) => (
-  <div>
-    <label className="block text-sm font-medium text-gray-100">{label}</label>
-    <div className="mt-2 flex items-center rounded-md bg-gray-800 border border-gray-700 focus-within:ring-2 focus-within:ring-indigo-500">
+  <div className="space-y-2">
+    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500">{label}</label>
+    <div className="flex items-center rounded-md bg-white border border-gray-300 focus-within:border-gray-900 focus-within:ring-1 focus-within:ring-gray-900 transition overflow-hidden">
       {prefix && (
-        <span className="px-3 text-gray-400 select-none">{prefix}</span>
+        <span className="pl-3 pr-1 text-sm text-gray-400 select-none font-medium">{prefix}</span>
       )}
       <input
         type={type}
@@ -407,7 +462,7 @@ const Input: React.FC<{
         name={name}
         value={value}
         onChange={onChange}
-        className="block w-full px-3 py-2 bg-transparent text-gray-100 placeholder-gray-500 focus:outline-none"
+        className="block w-full px-3 py-2 text-sm bg-transparent text-gray-900 placeholder-gray-400 focus:outline-none"
       />
     </div>
   </div>
@@ -420,50 +475,29 @@ const Textarea: React.FC<{
   onChange: (e: ChangeEvent<HTMLTextAreaElement>) => void;
   helperText?: string;
 }> = ({ label, name, value, onChange, helperText }) => (
-  <div>
-    <label className="block text-sm font-medium text-gray-100">{label}</label>
+  <div className="space-y-2">
+    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500">{label}</label>
     <textarea
       id={name}
       name={name}
-      rows={3}
+      rows={4}
       value={value}
       onChange={onChange}
-      className="mt-2 block w-full rounded-md border border-gray-700 bg-gray-800 px-3 py-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+      className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition resize-y"
     />
-    {helperText && <p className="mt-1 text-sm text-gray-400">{helperText}</p>}
+    {helperText && <p className="text-xs text-gray-400 mt-1">{helperText}</p>}
   </div>
 );
 
 const FileInput: React.FC<{
-  label: string;
   name: string;
-  icon: React.ReactNode;
   onChange: (e: ChangeEvent<HTMLInputElement>) => void;
   dragDrop?: boolean;
-}> = ({ label, name, icon, onChange, dragDrop }) => (
-  <div>
-    <label className="block text-sm font-medium text-gray-100">{label}</label>
-    <div
-      className={`mt-2 flex items-center gap-3 ${
-        dragDrop
-          ? "justify-center border-2 border-dashed py-6 rounded-md border-gray-700"
-          : ""
-      }`}
-    >
-      {icon}
-      <label className="cursor-pointer text-indigo-500 font-semibold">
-        <span>Upload a file</span>
-        <input
-          type="file"
-          name={name}
-          onChange={onChange}
-          className="sr-only"
-        />
-      </label>
-
-      {dragDrop && <p className="text-gray-400 pl-2">or drag and drop</p>}
-    </div>
-  </div>
+}> = ({ name, onChange, dragDrop }) => (
+  <label className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-3.5 py-1.5 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 active:bg-gray-100 transition cursor-pointer">
+    <span>{dragDrop ? "Choose Cover" : "Update Asset"}</span>
+    <input type="file" name={name} accept="image/*" onChange={onChange} className="sr-only" />
+  </label>
 );
 
 const Select: React.FC<{
@@ -473,15 +507,15 @@ const Select: React.FC<{
   options: string[];
   onChange: (e: ChangeEvent<HTMLSelectElement>) => void;
 }> = ({ label, name, value, options, onChange }) => (
-  <div>
-    <label className="block text-sm font-medium text-gray-100">{label}</label>
-    <div className="mt-2 relative">
+  <div className="space-y-2">
+    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500">{label}</label>
+    <div className="relative">
       <select
         id={name}
         name={name}
         value={value}
         onChange={onChange}
-        className="block w-full rounded-md border border-gray-700 bg-gray-800 px-3 py-2 text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none"
+        className="block w-full rounded-md border border-gray-300 bg-white pl-3 pr-10 py-2 text-sm text-gray-900 focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 appearance-none transition"
       >
         {options.map((opt) => (
           <option key={opt} value={opt}>
@@ -489,7 +523,7 @@ const Select: React.FC<{
           </option>
         ))}
       </select>
-      <ChevronDownIcon className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+      <ChevronDownIcon className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
     </div>
   </div>
 );
@@ -501,22 +535,22 @@ const Checkbox: React.FC<{
   onChange: (e: ChangeEvent<HTMLInputElement>) => void;
   helperText?: string;
 }> = ({ label, name, checked, onChange, helperText }) => (
-  <div className="flex items-start gap-3">
+  <label className="flex items-start gap-3 cursor-pointer select-none group">
     <input
       type="checkbox"
       id={name}
       name={name}
       checked={checked}
       onChange={onChange}
-      className="mt-1 h-4 w-4 rounded border-gray-600 text-indigo-500 focus:ring-indigo-500"
+      className="mt-0.5 h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900 accent-gray-900"
     />
     <div>
-      <label className="text-sm font-medium text-gray-100" htmlFor={name}>
+      <span className="text-sm font-medium text-gray-900 group-hover:text-black transition">
         {label}
-      </label>
-      {helperText && <p className="text-sm text-gray-400">{helperText}</p>}
+      </span>
+      {helperText && <p className="text-xs text-gray-400 mt-0.5">{helperText}</p>}
     </div>
-  </div>
+  </label>
 );
 
 const RadioGroup: React.FC<{
@@ -527,24 +561,23 @@ const RadioGroup: React.FC<{
   onChange: (value: "everything" | "email" | "none") => void;
 }> = ({ label, name, options, selected, onChange }) => (
   <fieldset className="space-y-3">
-    <legend className="text-sm font-semibold text-gray-100">{label}</legend>
-    {options.map((opt) => (
-      <div key={opt.value} className="flex items-center gap-3">
-        <input
-          type="radio"
-          id={opt.value}
-          name={name}
-          checked={selected === opt.value}
-          onChange={() => onChange(opt.value)}
-          className="h-4 w-4 text-indigo-500 border-gray-600 focus:ring-indigo-500"
-        />
-        <label
-          htmlFor={opt.value}
-          className="text-sm font-medium text-gray-100"
-        >
-          {opt.label}
+    <legend className="text-xs font-bold uppercase tracking-wider text-gray-500">{label}</legend>
+    <div className="space-y-2">
+      {options.map((opt) => (
+        <label key={opt.value} className="flex items-center gap-3 cursor-pointer select-none group">
+          <input
+            type="radio"
+            id={opt.value}
+            name={name}
+            checked={selected === opt.value}
+            onChange={() => onChange(opt.value)}
+            className="h-4 w-4 text-gray-900 border-gray-300 focus:ring-gray-900 accent-gray-900"
+          />
+          <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900 transition">
+            {opt.label}
+          </span>
         </label>
-      </div>
-    ))}
+      ))}
+    </div>
   </fieldset>
 );

@@ -588,7 +588,7 @@ export default function CoursePage() {
                                         <div className="relative aspect-video bg-gray-100 w-full flex-shrink-0">
                                             {video.thumbnail_url ? (
                                                 <img
-                                                    src={`${API_BASE_URL}/${video.thumbnail_url}`}
+                                                    src={video.thumbnail_url.startsWith("http") ? video.thumbnail_url : `${API_BASE_URL}/${video.thumbnail_url}`}
                                                     alt={video.title}
                                                     className="w-full h-full object-cover"
                                                 />

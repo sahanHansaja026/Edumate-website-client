@@ -48,7 +48,7 @@ export default function EditContentForm() {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // ===================================
-    // METADATA HYDRATION & AUTH CHECK
+    // DATA HYDRATION & CHANNEL AUTH CHECK
     // ===================================
     useEffect(() => {
         const fetchAndVerifyAccess = async () => {
@@ -62,27 +62,26 @@ export default function EditContentForm() {
                     return;
                 }
 
-                // 1. Fetch content item profile properties
+                // 1. Fetch content metadata item
                 const contentRes = await axios.get(
                     `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}/contents/view/${contentId}`
                 );
                 const contentData = contentRes.data;
 
-                // 2. Fetch parent module definition to inspect resource owner ID reference
-                const parentModuleId = contentData.module_id;
-                const moduleRes = await axios.get(
-                    `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}/modules/${parentModuleId}`
+                // 2. Query specialized FastAPI /access endpoint using the channel module ID
+                const channelModuleId = contentData.module_id;
+                const accessRes = await axios.get(
+                    `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}/channel-modules/access/${channelModuleId}/${activeUser.id}`
                 );
-                const moduleData = moduleRes.data;
 
-                // 3. Evaluate multi-tenant authority ownership match
-                if (Number(activeUser.id) !== Number(moduleData.user_id)) {
+                // Validate if current session user is the true module owner
+                if (!accessRes.data.is_owner) {
                     setHasAccess(false);
                     setFetching(false);
                     return;
                 }
 
-                // Hydrate inputs if authorized
+                // 3. Hydrate inputs if authorized owner
                 setHasAccess(true);
                 setTitle(contentData.title || "");
                 setWeek(contentData.week || 1);
@@ -99,7 +98,7 @@ export default function EditContentForm() {
                 }
 
             } catch (err) {
-                console.error("Hydration runtime intercept exception:", err);
+                console.error("Hydration fallback security intercept exception:", err);
                 setHasAccess(false);
             } finally {
                 setFetching(false);
@@ -110,7 +109,7 @@ export default function EditContentForm() {
     }, [contentId]);
 
     // ===================================
-    // HARD REDIRECTION ON EVALUATION
+    // AUTOMATIC SECURITY NAVIGATION EFFECT
     // ===================================
     useEffect(() => {
         if (hasAccess === false) {
@@ -119,7 +118,7 @@ export default function EditContentForm() {
     }, [hasAccess, router]);
 
     // ===================================
-    // TRANSIT SERVER MUTATION (PUT)
+    // MUTATION HANDLER (PUT)
     // ===================================
     const handleUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -159,11 +158,12 @@ export default function EditContentForm() {
         }
     };
 
-    if (fetching || hasAccess === null) {
+    // Keep layout blank/loading while authorization resolves or triggers redirect routing
+    if (fetching || hasAccess === null || hasAccess === false) {
         return (
             <div className="min-h-screen bg-white flex flex-col items-center justify-center text-gray-900 gap-3">
                 <Loader2 className="w-6 h-6 animate-spin text-gray-900" />
-                <p className="text-xs font-semibold uppercase tracking-wider">Validating asset workspace permissions...</p>
+                <p className="text-xs font-semibold uppercase tracking-wider">Verifying Channel Module Ownership...</p>
             </div>
         );
     }
@@ -171,7 +171,7 @@ export default function EditContentForm() {
     return (
         <div className="min-h-screen bg-white text-gray-900 flex flex-col antialiased">
 
-            {/* STICKY LIGHTWEIGHT ACTION HEADER */}
+            {/* ACTION HEADER */}
             <header className="border-b border-gray-100 px-4 sm:px-8 py-4 bg-white/80 backdrop-blur-md sticky top-0 z-20 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
                 <div className="flex items-center gap-4">
                     <button
@@ -183,10 +183,10 @@ export default function EditContentForm() {
                     </button>
                     <div>
                         <h1 className="text-xl font-bold tracking-tight text-gray-900">
-                            Edit Workspace Resource
+                            Edit Channel Content Workspace
                         </h1>
                         <p className="text-[11px] text-gray-400 font-mono tracking-tight">
-                            Content ID reference vector: {contentId}
+                            Target Resource Vector ID: {contentId}
                         </p>
                     </div>
                 </div>
@@ -211,77 +211,75 @@ export default function EditContentForm() {
                 </div>
             </header>
 
-            {/* FULLY RESPONSIVE DUAL WINDOW CORE LAYOUT */}
+            {/* RESPONSIVE DUAL-PANEL GRID DESIGN SYSTEM */}
             <main className="flex-1 grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-gray-100">
 
-                {/* LEFT GRID FORM PANEL */}
+                {/* LEFT CORE LAYOUT PARAMETERS FORM PANEL */}
                 <div className="p-6 sm:p-10 bg-white">
                     <div className="max-w-xl mx-auto space-y-8">
                         <div>
                             <h2 className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-1">Section 01</h2>
-                            <h3 className="text-lg font-bold tracking-tight text-gray-900">Structural Parameters</h3>
+                            <h3 className="text-lg font-bold tracking-tight text-gray-900">Structural Schematics</h3>
                         </div>
 
                         <div className="space-y-5">
                             {/* TITLE */}
                             <div className="space-y-1.5">
                                 <label className="text-xs font-bold uppercase tracking-wider text-gray-700">
-                                    Resource Title
+                                    Title
                                 </label>
                                 <input
                                     type="text"
                                     value={title}
                                     onChange={(e) => setTitle(e.target.value)}
-                                    placeholder="Enter descriptive title name..."
+                                    placeholder="Enter content title..."
                                     className="w-full p-3 bg-white border border-gray-200 text-gray-900 rounded-xl outline-none focus:border-gray-900 focus:ring-4 focus:ring-gray-50 transition"
                                     required
                                 />
                             </div>
 
-                            {/* TIMELINE TIMING */}
+                            {/* SELECT TIMELINE TRACKING */}
                             <div className="space-y-1.5">
                                 <label className="text-xs font-bold uppercase tracking-wider text-gray-700 flex items-center gap-1.5">
                                     <Layers className="w-3.5 h-3.5 text-gray-400" /> Timeline Allocation
                                 </label>
-                                <div className="relative">
-                                    <select
-                                        value={week}
-                                        onChange={(e) => setWeek(Number(e.target.value))}
-                                        className="w-full p-3 bg-white border border-gray-200 text-gray-900 rounded-xl outline-none focus:border-gray-900 focus:ring-4 focus:ring-gray-50 transition appearance-none cursor-pointer font-medium"
-                                    >
-                                        {Array.from({ length: 20 }, (_, i) => (
-                                            <option key={i + 1} value={i + 1}>
-                                                Syllabus Week Schedule {i + 1}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
+                                <select
+                                    value={week}
+                                    onChange={(e) => setWeek(Number(e.target.value))}
+                                    className="w-full p-3 bg-white border border-gray-200 text-gray-900 rounded-xl outline-none focus:border-gray-900 focus:ring-4 focus:ring-gray-50 transition appearance-none cursor-pointer font-medium"
+                                >
+                                    {Array.from({ length: 20 }, (_, i) => (
+                                        <option key={i + 1} value={i + 1}>
+                                            Week {i + 1}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
 
-                            {/* DESCRIPTION */}
+                            {/* DESCRIPTION TEXTAREA */}
                             <div className="space-y-1.5">
                                 <label className="text-xs font-bold uppercase tracking-wider text-gray-700">
-                                    Resource Abstract Summary Description
+                                    Description / Summary
                                 </label>
                                 <textarea
                                     rows={4}
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
-                                    placeholder="Provide context for the module structural elements..."
+                                    placeholder="What are the structural details or brief descriptions of this content?"
                                     className="w-full p-3 bg-white border border-gray-200 text-gray-900 rounded-xl outline-none focus:border-gray-900 focus:ring-4 focus:ring-gray-50 transition text-sm leading-relaxed"
                                 />
                             </div>
 
-                            {/* EXTERNAL TARGET LINK */}
+                            {/* REDIRECT EXTERNAL URL TARGET */}
                             <div className="space-y-1.5">
                                 <label className="text-xs font-bold uppercase tracking-wider text-gray-700 flex items-center gap-1.5">
-                                    <Link className="w-3.5 h-3.5 text-gray-400" /> Redirect Asset URL Link
+                                    <Link className="w-3.5 h-3.5 text-gray-400" /> External Path / URL Reference
                                 </label>
                                 <input
                                     type="text"
                                     value={externalUrl}
                                     onChange={(e) => setExternalUrl(e.target.value)}
-                                    placeholder="https://external-resource-domain.com"
+                                    placeholder="https://example.com/external-resource"
                                     className="w-full p-3 bg-white border border-gray-200 text-gray-900 rounded-xl outline-none focus:border-gray-900 focus:ring-4 focus:ring-gray-50 transition text-sm"
                                 />
                             </div>
@@ -289,16 +287,16 @@ export default function EditContentForm() {
 
                         <hr className="border-gray-100" />
 
-                        {/* AVAILABILITY CALENDAR SLOTS */}
+                        {/* AVAILABILITY LIMIT WINDOW BOUNDS */}
                         <div className="space-y-4">
                             <div className="flex items-center gap-2">
                                 <Calendar className="w-4 h-4 text-gray-400" />
-                                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Access Windows</h3>
+                                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Availability Bounds</h3>
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
-                                    <span className="text-[11px] font-bold text-gray-400 uppercase">Release Initialization</span>
+                                    <span className="text-[11px] font-bold text-gray-400 uppercase">Open Date</span>
                                     <input
                                         type="date"
                                         value={openDate}
@@ -308,7 +306,7 @@ export default function EditContentForm() {
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <span className="text-[11px] font-bold text-gray-400 uppercase">Closing Expiration Date</span>
+                                    <span className="text-[11px] font-bold text-gray-400 uppercase">Close Date</span>
                                     <input
                                         type="date"
                                         value={closeDate}
@@ -321,18 +319,18 @@ export default function EditContentForm() {
                     </div>
                 </div>
 
-                {/* RIGHT GRID BINARY CONTROL PANEL */}
+                {/* RIGHT SYSTEM STATUS CONTROL PANEL */}
                 <div className="p-6 sm:p-10 bg-gray-50/50">
                     <div className="max-w-xl mx-auto space-y-8">
                         <div>
                             <h2 className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-1">Section 02</h2>
-                            <h3 className="text-lg font-bold tracking-tight text-gray-900">Binary Asset Management</h3>
+                            <h3 className="text-lg font-bold tracking-tight text-gray-900">Asset Matrix Attachment</h3>
                         </div>
 
-                        {/* DROPZONE DRAG CONTAINER ARCHITECTURE */}
+                        {/* UPLOAD FILE DROP CONTAINER BLOCK */}
                         <div className="space-y-3">
                             <label className="text-xs font-bold uppercase tracking-wider text-gray-700 flex items-center gap-1.5">
-                                <FileUp className="w-3.5 h-3.5 text-gray-400" /> Primary Object Payload
+                                <FileUp className="w-3.5 h-3.5 text-gray-400" /> Primary Object Storage Asset
                             </label>
 
                             <div
@@ -344,10 +342,10 @@ export default function EditContentForm() {
                                 </div>
 
                                 <p className="text-sm font-bold text-gray-900">
-                                    Substitute storage asset payload binary
+                                    Click to change attached content asset
                                 </p>
                                 <p className="text-xs text-gray-400 mt-1 max-w-xs mx-auto leading-normal">
-                                    Select a new file component package to rewrite current system cluster references.
+                                    Upload new files to replace legacy system document binary.
                                 </p>
 
                                 <input
@@ -359,10 +357,10 @@ export default function EditContentForm() {
                             </div>
                         </div>
 
-                        {/* CURRENT ATTACHMENT REPORT CONTAINER CARD */}
+                        {/* WORKSPACE STATUS LOG CONTAINER */}
                         <div className="bg-white border border-gray-200/60 rounded-xl p-4 space-y-3 shadow-sm">
                             <h4 className="text-[11px] font-bold uppercase text-gray-400 tracking-wider">
-                                Mounted Workspace Index
+                                Current Asset Allocation Status
                             </h4>
 
                             {file ? (
@@ -370,7 +368,7 @@ export default function EditContentForm() {
                                     <div className="flex items-center gap-2.5 truncate">
                                         <FileText className="w-4 h-4 text-gray-300 flex-shrink-0" />
                                         <span className="text-xs font-medium truncate">
-                                            Staged: {file.name}
+                                            Staged Queue: {file.name}
                                         </span>
                                     </div>
                                     <button
@@ -388,20 +386,20 @@ export default function EditContentForm() {
                                 <div className="flex items-center gap-2.5 bg-gray-50 border border-gray-200 rounded-xl p-3">
                                     <FileText className="w-4 h-4 text-gray-900 flex-shrink-0" />
                                     <span className="text-xs text-gray-700 font-medium truncate">
-                                        Retained: {existingFilePath.split("/").pop()}
+                                        Retained Asset: {existingFilePath.split("/").pop()}
                                     </span>
                                 </div>
                             ) : (
                                 <p className="text-xs text-gray-400 italic">
-                                    No external binaries mapped inside this workspace configuration.
+                                    No active file attachments bound to this workspace resource.
                                 </p>
                             )}
                         </div>
 
-                        {/* PERMISSION CONFIGURATION STRATEGY TABS */}
+                        {/* PRIVILEGE SWITCH CONFIG ENGINE */}
                         <div className="bg-white border border-gray-200/60 rounded-xl p-4 shadow-sm space-y-3">
                             <h4 className="text-[11px] font-bold uppercase text-gray-400 tracking-wider">
-                                Client Privilege Distribution Engine
+                                Resource Permission Strategy
                             </h4>
 
                             <div className="flex p-1 bg-gray-100 rounded-xl gap-1">
@@ -425,18 +423,18 @@ export default function EditContentForm() {
                                         }`}
                                 >
                                     <EyeOff className="w-3.5 h-3.5" />
-                                    View Sandbox Only
+                                    View Only
                                 </button>
                             </div>
                         </div>
 
-                        {/* ENTERPRISE ENFORCEMENT BANNER NOTICE */}
+                        {/* ENTERPRISE ENFORCEMENT NOTIFICATION CARD */}
                         <div className="border border-gray-200 rounded-xl p-4 bg-white flex items-start gap-3">
                             <ShieldAlert className="w-4 h-4 text-gray-900 mt-0.5 flex-shrink-0" />
                             <div>
-                                <span className="text-xs font-bold text-gray-900 block">Authorization Enforced</span>
+                                <span className="text-xs font-bold text-gray-900 block">Channel Enforced Authorization</span>
                                 <p className="text-[11px] text-gray-400 mt-0.5 leading-normal">
-                                    Changes committed to this content entry are bound strictly to your user profile session ID credentials.
+                                    This workspace checks backend ownership properties. Only the assigned creator of this channel module can save updates.
                                 </p>
                             </div>
                         </div>

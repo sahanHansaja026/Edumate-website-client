@@ -14,6 +14,7 @@ import {
     Calendar,
     AlertCircle
 } from "lucide-react";
+import { getUser } from "@/app/services/authService";
 
 type Content = {
     assignment_id: number;
@@ -21,24 +22,40 @@ type Content = {
     title: string;
     description?: string;
     week: number;
-    file_path: string; // remove ?
+    file_path: string;
     open_date?: string;
     close_date?: string;
     allow_download: boolean;
-
 };
 
 export default function ViewContentPage() {
     const params = useParams();
     const router = useRouter();
     const id = params.id as string;
-
+    const [access, setAccess] = useState<boolean | null>(null);
     const [content, setContent] = useState<Content | null>(null);
     const [loading, setLoading] = useState(true);
+    const [user, setUser] = useState<any>(null);
 
     useEffect(() => {
         fetchContent();
     }, [id]);
+
+    useEffect(() => {
+        const currentUser = getUser();
+        setUser(currentUser);
+
+        if (currentUser && content) {
+            checkAccess(currentUser.id, currentUser.email);
+        }
+    }, [content]);
+
+    // Triggers a client-side redirect if backend access evaluation fails
+    useEffect(() => {
+        if (access === false) {
+            router.push("/errors/autharization");
+        }
+    }, [access, router]);
 
     const fetchContent = async () => {
         try {
@@ -50,6 +67,21 @@ export default function ViewContentPage() {
             console.error(error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    // Submits credentials matching the expected FastAPI query signature
+    const checkAccess = async (userId: number, studentEmail: string) => {
+        try {
+            const res = await fetch(
+                `${API_BASE_URL}/content-access/check/${id}?user_id=${userId}&student_email=${encodeURIComponent(studentEmail)}`
+            );
+
+            const data = await res.json();
+            setAccess(data.access);
+        } catch (err) {
+            console.error("Access check failed", err);
+            setAccess(false);
         }
     };
 
@@ -76,6 +108,11 @@ export default function ViewContentPage() {
                 </div>
             </div>
         );
+    }
+
+    // Prevents interface flashes while router coordinates redirect layout transitions
+    if (access === false) {
+        return null;
     }
 
     if (!content) {
@@ -106,7 +143,6 @@ export default function ViewContentPage() {
                         BACK TO MODULE
                     </Link>
                     <div className="hidden md:flex gap-4">
-                        {/* CHANGED: Added status check to prevent downloading if expired/locked */}
                         {content.allow_download && content.file_path && status === "AVAILABLE" && (
                             <a
                                 href={content.file_path.startsWith("http") ? content.file_path : `${API_BASE_URL}/${content.file_path}`}
@@ -121,7 +157,6 @@ export default function ViewContentPage() {
             </nav>
 
             <main className="max-w-7xl mx-auto px-4 py-8 md:px-8 grid grid-cols-1 lg:grid-cols-12 gap-12">
-
                 {/* LEFT COLUMN: PRIMARY CONTENT */}
                 <div className="lg:col-span-8 space-y-8">
                     <section>
@@ -214,14 +249,12 @@ export default function ViewContentPage() {
                             <div className="pt-4 mt-4 border-t border-gray-200">
                                 <div className="flex justify-between items-center mb-4">
                                     <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Status</span>
-                                    <span className={`text-[10px] font-bold px-2 py-0.5 border ${status === 'AVAILABLE' ? 'border-green-600 text-green-600' : 'border-red-600 text-red-600'
-                                        }`}>
+                                    <span className={`text-[10px] font-bold px-2 py-0.5 border ${status === 'AVAILABLE' ? 'border-green-600 text-green-600' : 'border-red-600 text-red-600'}`}>
                                         {status}
                                     </span>
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Downloads</span>
-                                    {/* CHANGED: Displays RESTRICTED if the resource is expired even if allow_download is structurally true */}
                                     <span className="text-[10px] font-bold text-gray-900">
                                         {content.allow_download && status === "AVAILABLE" ? "ENABLED" : "RESTRICTED"}
                                     </span>
@@ -231,7 +264,6 @@ export default function ViewContentPage() {
 
                         {/* MOBILE ONLY ACTIONS */}
                         <div className="mt-8 flex flex-col gap-2 md:hidden">
-                            {/* CHANGED: Added status check to block mobile link wrapper from showing up if expired/locked */}
                             {content.allow_download && content.file_path && status === "AVAILABLE" && (
                                 <a href={`${API_BASE_URL}/${content.file_path}`} download className="w-full bg-gray-900 text-white text-center py-3 text-xs font-bold uppercase tracking-widest">
                                     Download Now

@@ -173,7 +173,7 @@ export default function ChannelDirectoryPage() {
                                         {channel.cover_image ? (
                                             // eslint-disable-next-line @next/next/no-img-element
                                             <img
-                                                src={`${API_BASE_URL}/${channel.cover_image}`}
+                                                src={channel.cover_image.startsWith("http") ? channel.cover_image : `${API_BASE_URL}/${channel.cover_image}`}
                                                 alt="Channel Asset Banner"
                                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                             />
@@ -198,7 +198,7 @@ export default function ChannelDirectoryPage() {
                                             {channel.logo_image ? (
                                                 // eslint-disable-next-line @next/next/no-img-element
                                                 <img
-                                                    src={`${API_BASE_URL}/${channel.logo_image}`}
+                                                    src={channel.logo_image.startsWith("http") ? channel.logo_image : `${API_BASE_URL}/${channel.logo_image}`}
                                                     alt="Crest Avatar"
                                                     className="w-full h-full object-cover"
                                                 />

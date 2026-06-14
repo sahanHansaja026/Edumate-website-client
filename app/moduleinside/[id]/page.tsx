@@ -417,8 +417,9 @@ export default function CoursePage() {
                     <div className="p-4 sm:p-6">
                         <p className="text-gray-700 text-xs sm:text-sm leading-6 sm:leading-7 break-words whitespace-pre-line">
                             {showMore
-                                ? module.description
-                                : module.description.slice(0, 250) + "..."}
+                                ? (module.description || "No description available")
+                                : (module.description?.slice(0, 250) || "No description available") +
+                                ((module.description?.length ?? 0) > 250 ? "..." : "")}
                         </p>
 
                         <button
@@ -450,7 +451,7 @@ export default function CoursePage() {
                                         <div className="relative aspect-video bg-gray-100 w-full flex-shrink-0">
                                             {video.thumbnail_url ? (
                                                 <img
-                                                    src={`${API_BASE_URL}/${video.thumbnail_url}`}
+                                                    src={video.thumbnail_url.startsWith("http") ? video.thumbnail_url : `${API_BASE_URL}/${video.thumbnail_url}`}
                                                     alt={video.title}
                                                     className="w-full h-full object-cover"
                                                 />

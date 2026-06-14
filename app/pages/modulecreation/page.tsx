@@ -59,18 +59,30 @@ export default function CreateModule() {
       setCoverPreview(URL.createObjectURL(file));
     }
   };
-  // check subscription
+
+  // Check subscription
   const checkQuota = async (userId: number) => {
     try {
       const res = await fetch(`${API_BASE_URL}/quota/module/${userId}`);
       if (!res.ok) throw new Error("Failed to check quota");
-
       return await res.json();
     } catch (err) {
       console.error(err);
       return null;
     }
   };
+
+  // Reset form helper
+  const handleReset = () => {
+    setModuleName("");
+    setDescription("");
+    setSkills([]);
+    setSkillInput("");
+    setVisibility("public");
+    setCoverFile(null);
+    setCoverPreview(null);
+  };
+
   // Submit the form
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,7 +97,6 @@ export default function CreateModule() {
       return;
     }
 
-    // 🔥 CHECK QUOTA BEFORE CREATING MODULE
     const quota = await checkQuota(user.id);
 
     if (!quota) {
@@ -117,199 +128,260 @@ export default function CreateModule() {
       const data = await res.json();
       console.log("Module created:", data);
       alert("Module created successfully!");
-
-      // reset
-      setModuleName("");
-      setDescription("");
-      setSkills([]);
-      setSkillInput("");
-      setVisibility("public");
-      setCoverFile(null);
-      setCoverPreview(null);
-
+      handleReset();
     } catch (error) {
       console.error(error);
       alert("Error creating module");
     }
   };
-  
+
   return (
-    <div className="min-h-screen bg-gray-900 flex justify-center px-4 py-12">
-      <form
-        className="w-full max-w-3xl space-y-10 text-gray-200 relative"
-        onSubmit={handleSubmit}
-      >
-        {/* Module Info */}
-        <div>
-          {user && <p className="text-sm text-gray-400">User ID: {user.id}</p>}
-          <h2 className="text-lg font-semibold text-white">Create Module</h2>
-          <p className="text-sm text-gray-400">
-            Fill in the details to create your learning module.
-          </p>
-        </div>
+    <div className="min-h-screen bg-white text-gray-900 antialiased">
+      <form onSubmit={handleSubmit} className="w-full">
 
-        {/* Module Name */}
-        <div>
-          <label className="block text-sm font-medium">Module Name</label>
-          <input
-            type="text"
-            value={moduleName}
-            onChange={(e) => setModuleName(e.target.value)}
-            placeholder="e.g. Introduction to Flutter"
-            className="mt-2 w-full rounded-md bg-gray-800 px-3 py-2 outline outline-1 outline-gray-700 focus:outline-indigo-500"
-          />
-        </div>
+        {/* Top Control Header Bar */}
+        <header className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-gray-200 px-4 py-4 md:px-8">
+          <div className="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-3">
+                <h1 className="text-xl font-bold tracking-tight text-gray-900 md:text-2xl">Create New Module</h1>
+                {user && (
+                  <span className="text-xs font-mono bg-gray-100 text-gray-600 px-2.5 py-0.5 rounded border border-gray-200">
+                    UID: {user.id}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-gray-500 mt-0.5 hidden sm:block">LMS Course Management Workspace</p>
+            </div>
 
-        {/* Description */}
-        <div>
-          <label className="block text-sm font-medium">Module Description</label>
-          <textarea
-            rows={4}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Describe what this module is about..."
-            className="mt-2 w-full rounded-md bg-gray-800 px-3 py-2 outline outline-1 outline-gray-700 focus:outline-indigo-500"
-          />
-        </div>
-
-        {/* Cover Image */}
-        <div>
-          <label className="block text-sm font-medium">Cover Image</label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleCoverChange}
-            className="mt-2 block w-full text-sm text-gray-400"
-          />
-          {coverPreview && (
-            <img
-              src={coverPreview}
-              alt="Cover Preview"
-              className="mt-2 max-h-40 rounded-md object-cover"
-            />
-          )}
-        </div>
-
-        {/* Skills with Autocomplete */}
-        <div className="relative">
-          <label className="block text-sm font-medium">Skills you’ll gain</label>
-          <div className="mt-2 flex gap-2">
-            <input
-              type="text"
-              value={skillInput}
-              onChange={(e) => setSkillInput(e.target.value)}
-              placeholder="Type a skill..."
-              className="flex-1 rounded-md bg-gray-800 px-3 py-2 outline outline-1 outline-gray-700 focus:outline-indigo-500"
-            />
-            <button
-              type="button"
-              onClick={() => addSkill()}
-              className="rounded-md bg-indigo-500 px-4 py-2 text-sm font-semibold"
-            >
-              Add
-            </button>
-          </div>
-
-          {/* Suggestions Dropdown */}
-          {skillInput && (
-            <ul className="absolute z-10 mt-1 max-h-40 w-full overflow-auto rounded-md bg-gray-800 shadow-lg">
-              {availableSkills
-                .filter(
-                  (skill) =>
-                    skill.toLowerCase().includes(skillInput.toLowerCase()) &&
-                    !skills.includes(skill)
-                )
-                .map((skill) => {
-                  const index = skill
-                    .toLowerCase()
-                    .indexOf(skillInput.toLowerCase());
-                  const beforeMatch = skill.slice(0, index);
-                  const match = skill.slice(index, index + skillInput.length);
-                  const afterMatch = skill.slice(index + skillInput.length);
-
-                  return (
-                    <li
-                      key={skill}
-                      onClick={() => addSkill(skill)}
-                      className="cursor-pointer px-3 py-2 hover:bg-indigo-500/30"
-                    >
-                      {beforeMatch}
-                      <span className="font-semibold text-indigo-300">{match}</span>
-                      {afterMatch}
-                    </li>
-                  );
-                })}
-            </ul>
-          )}
-
-          {/* Selected Tags */}
-          <div className="mt-3 flex flex-wrap gap-2">
-            {skills.map((skill) => (
-              <span
-                key={skill}
-                className="flex items-center gap-2 rounded-full bg-indigo-500/20 px-3 py-1 text-sm"
+            {/* Action Buttons in Sticky Header */}
+            <div className="flex items-center gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={handleReset}
+                className="flex-1 sm:flex-initial rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition shadow-sm text-center"
               >
-                {skill}
-                <button
-                  type="button"
-                  onClick={() => removeSkill(skill)}
-                  className="text-red-400"
-                >
-                  ×
-                </button>
-              </span>
-            ))}
+                Clear Changes
+              </button>
+              <button
+                type="submit"
+                className="flex-1 sm:flex-initial rounded-md bg-gray-900 px-5 py-2 text-sm font-semibold text-white hover:bg-gray-800 active:bg-gray-950 transition shadow-sm text-center"
+              >
+                Create Module
+              </button>
+            </div>
           </div>
-        </div>
+        </header>
 
-        {/* Visibility */}
-        <div>
-          <label className="block text-sm font-medium">Visibility</label>
-          <div className="mt-3 flex gap-6">
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                checked={visibility === "public"}
-                onChange={() => setVisibility("public")}
-              />
-              Public
-            </label>
+        {/* Form Body Layout */}
+        <main className="max-w-6xl mx-auto px-4 py-8 md:px-8 md:py-12">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
 
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                checked={visibility === "private"}
-                onChange={() => setVisibility("private")}
-              />
-              Private
-            </label>
+            {/* Left/Main Column - Core Details */}
+            <div className="lg:col-span-2 space-y-8">
+              {/* Module Name */}
+              <div className="space-y-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500">
+                  Module Title <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={moduleName}
+                  onChange={(e) => setModuleName(e.target.value)}
+                  placeholder="e.g., Introduction to Computer Science"
+                  className="w-full rounded-md bg-white border border-gray-300 px-4 py-3 text-gray-900 placeholder-gray-400 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 outline-none transition"
+                  required
+                />
+              </div>
+
+              {/* Description */}
+              <div className="space-y-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500">
+                  Module Description
+                </label>
+                <textarea
+                  rows={8}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Provide an in-depth curriculum overview, milestones, targeted audiences, and course requirements..."
+                  className="w-full rounded-md bg-white border border-gray-300 px-4 py-3 text-gray-900 placeholder-gray-400 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 outline-none transition resize-y"
+                />
+              </div>
+
+              {/* Cover Image Upload Area */}
+              <div className="space-y-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500">
+                  Cover Image Asset
+                </label>
+                <div className="relative flex flex-col items-center justify-center rounded-md border-2 border-dashed border-gray-300 px-6 py-10 bg-gray-50 hover:bg-gray-100/60 transition group">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleCoverChange}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  />
+                  <div className="space-y-2 text-center pointer-events-none">
+                    <svg className="mx-auto h-8 w-8 text-gray-400 group-hover:text-gray-600 transition" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                      <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4-4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    <div className="text-sm text-gray-600">
+                      <span className="font-semibold text-gray-900 underline">Upload media file</span>
+                      <p className="inline pl-1">or drag and drop here</p>
+                    </div>
+                    <p className="text-xs text-gray-400">Accepts PNG, JPG, or GIF formatting</p>
+                  </div>
+                </div>
+                {coverPreview && (
+                  <div className="mt-4 relative inline-block">
+                    <img
+                      src={coverPreview}
+                      alt="Cover Preview"
+                      className="max-h-48 w-auto rounded border border-gray-200 object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => { setCoverFile(null); setCoverPreview(null); }}
+                      className="absolute -top-2 -right-2 bg-gray-900 text-white rounded-full p-1 shadow-md hover:bg-gray-800 transition text-xs w-5 h-5 flex items-center justify-center font-bold"
+                    >
+                      &times;
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Right Side Column - Metadata & Settings */}
+            <div className="lg:col-span-1 space-y-8 lg:border-l lg:border-gray-200 lg:pl-8">
+
+              {/* Privacy Settings / Visibility */}
+              <div className="space-y-3">
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500">
+                  Privacy Settings
+                </label>
+                <div className="space-y-2">
+                  <label
+                    className={`flex items-start gap-3 rounded-md border p-3.5 cursor-pointer transition ${visibility === "public"
+                        ? "border-gray-900 bg-gray-50 ring-1 ring-gray-900"
+                        : "border-gray-200 hover:bg-gray-50"
+                      }`}
+                  >
+                    <input
+                      type="radio"
+                      name="visibility"
+                      checked={visibility === "public"}
+                      onChange={() => setVisibility("public")}
+                      className="h-4 w-4 mt-0.5 text-gray-900 focus:ring-gray-900 border-gray-300"
+                    />
+                    <div>
+                      <span className="block text-sm font-semibold text-gray-900">Public Access</span>
+                      <span className="block text-xs text-gray-500 mt-0.5">Indexed inside search catalogs open to public students.</span>
+                    </div>
+                  </label>
+
+                  <label
+                    className={`flex items-start gap-3 rounded-md border p-3.5 cursor-pointer transition ${visibility === "private"
+                        ? "border-gray-900 bg-gray-50 ring-1 ring-gray-900"
+                        : "border-gray-200 hover:bg-gray-50"
+                      }`}
+                  >
+                    <input
+                      type="radio"
+                      name="visibility"
+                      checked={visibility === "private"}
+                      onChange={() => setVisibility("private")}
+                      className="h-4 w-4 mt-0.5 text-gray-900 focus:ring-gray-900 border-gray-300"
+                    />
+                    <div>
+                      <span className="block text-sm font-semibold text-gray-900">Private Enrolment</span>
+                      <span className="block text-xs text-gray-500 mt-0.5">Restricted strictly to invitation tokens.</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* Skills Section */}
+              <div className="relative space-y-3">
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500">
+                  Skills Targeted
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={skillInput}
+                    onChange={(e) => setSkillInput(e.target.value)}
+                    placeholder="Enter targeted skills..."
+                    className="flex-1 rounded-md bg-white border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 outline-none transition"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addSkill();
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => addSkill()}
+                    className="rounded-md bg-gray-900 text-white px-4 py-2 text-sm font-medium hover:bg-gray-800 transition shrink-0"
+                  >
+                    Add
+                  </button>
+                </div>
+
+                {/* Autocomplete suggestions dropdown */}
+                {skillInput && (
+                  <ul className="absolute z-20 mt-1 max-h-48 w-full overflow-auto rounded-md bg-white border border-gray-200 shadow-md divide-y divide-gray-100">
+                    {availableSkills
+                      .filter(
+                        (skill) =>
+                          skill.toLowerCase().includes(skillInput.toLowerCase()) &&
+                          !skills.includes(skill)
+                      )
+                      .map((skill) => {
+                        const index = skill.toLowerCase().indexOf(skillInput.toLowerCase());
+                        const beforeMatch = skill.slice(0, index);
+                        const match = skill.slice(index, index + skillInput.length);
+                        const afterMatch = skill.slice(index + skillInput.length);
+
+                        return (
+                          <li
+                            key={skill}
+                            onClick={() => addSkill(skill)}
+                            className="cursor-pointer px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition"
+                          >
+                            {beforeMatch}
+                            <span className="font-semibold text-gray-900">{match}</span>
+                            {afterMatch}
+                          </li>
+                        );
+                      })}
+                  </ul>
+                )}
+
+                {/* Selected Tags Display */}
+                {skills.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {skills.map((skill) => (
+                      <span
+                        key={skill}
+                        className="flex items-center gap-1 rounded bg-gray-100 border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-800"
+                      >
+                        {skill}
+                        <button
+                          type="button"
+                          onClick={() => removeSkill(skill)}
+                          className="text-gray-400 hover:text-gray-900 transition font-bold text-sm"
+                        >
+                          &times;
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+            </div>
           </div>
-        </div>
-
-        {/* Actions */}
-        <div className="flex justify-end gap-4">
-          <button
-            type="button"
-            className="text-sm text-gray-400"
-            onClick={() => {
-              setModuleName("");
-              setDescription("");
-              setSkills([]);
-              setSkillInput("");
-              setVisibility("public");
-              setCoverFile(null);
-              setCoverPreview(null);
-            }}
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className="rounded-md bg-indigo-500 px-6 py-2 text-sm font-semibold"
-          >
-            Create Module
-          </button>
-        </div>
+        </main>
       </form>
     </div>
   );

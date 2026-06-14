@@ -126,6 +126,9 @@ export default function Enrolle() {
     }
   };
 
+  // Helper boolean to keep conditional rendering clean
+  const isOwnerOrEnrolled = user?.id === module.user_id || isEnrolled;
+
   return (
     <div className="bg-white min-h-screen text-gray-900">
 
@@ -202,13 +205,19 @@ export default function Enrolle() {
         <div className="border rounded-xl p-6 shadow-sm h-fit sticky top-10 bg-white">
 
           <h3 className="text-lg font-semibold mb-2">
-            {isEnrolled ? "You are enrolled!" : "Enroll in this module"}
+            {user?.id === module.user_id
+              ? "Your Module"
+              : isEnrolled
+                ? "You are enrolled!"
+                : "Enroll in this module"}
           </h3>
 
           <p className="text-sm text-gray-500 mb-6">
-            {isEnrolled
-              ? "You have full access to this course's content."
-              : "Get full access to lessons and resources."}
+            {user?.id === module.user_id
+              ? "You created this module. Manage or view your content below."
+              : isEnrolled
+                ? "You have full access to this course's content."
+                : "Get full access to lessons and resources."}
           </p>
 
           {user?.id === module.user_id && (
@@ -223,7 +232,7 @@ export default function Enrolle() {
             onClick={enrollUser}
             className="w-full bg-black text-white py-3 rounded-lg hover:bg-gray-800 transition"
           >
-            {isEnrolled ? "Go to Module Content" : "Enroll Now"}
+            {isOwnerOrEnrolled ? "Go to Module Content" : "Enroll Now"}
           </button>
 
           <p className="text-xs text-gray-400 mt-4 text-center">

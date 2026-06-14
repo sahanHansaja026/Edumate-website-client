@@ -143,7 +143,11 @@ export default function ChannelDashboardView() {
                 <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden relative">
                     <div className="h-44 sm:h-60 md:h-64 w-full bg-gradient-to-r from-gray-200 via-gray-300 to-gray-400 relative">
                         {channel.cover_image && (
-                            <img src={`${API_BASE_URL}/${channel.cover_image}`} alt="Channel Workspace Backdrop Banner" className="w-full h-full object-cover" />
+                            <img
+                                src={channel.cover_image.startsWith("http") ? channel.cover_image : `${API_BASE_URL}/${channel.cover_image}`}
+                                alt="Channel Workspace Backdrop Banner"
+                                className="w-full h-full object-cover"
+                            />
                         )}
 
                         {isOwner && (
@@ -161,7 +165,11 @@ export default function ChannelDashboardView() {
                     <div className="px-6 sm:px-8 pb-6 relative flex flex-col md:flex-row md:items-end justify-between gap-4">
                         <div className="relative -mt-14 sm:-mt-16 h-24 w-24 sm:h-32 sm:w-32 rounded-xl border-4 border-white bg-white shadow-sm overflow-hidden flex-shrink-0 z-10">
                             {channel.logo_image ? (
-                                <img src={`${API_BASE_URL}/${channel.logo_image}`} alt="Institutional Crest Badge" className="w-full h-full object-cover" />
+                                <img
+                                    src={channel.logo_image.startsWith("http") ? channel.logo_image : `${API_BASE_URL}/${channel.logo_image}`}
+                                    alt="Institutional Crest Badge"
+                                    className="w-full h-full object-cover"
+                                />
                             ) : (
                                 <div className="w-full h-full bg-gray-900 text-white font-black text-xl flex items-center justify-center">
                                     {channel.channel_name.substring(0, 2).toUpperCase()}
@@ -224,7 +232,6 @@ export default function ChannelDashboardView() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             {modules.length > 0 ? (
                                 modules.map((mod) => (
-                                    /* Dynamic Link Wrap with hover scale effects to indicate clickability */
                                     <Link
                                         href={`/channel_module_inside/${mod.module_id}`}
                                         key={mod.module_id}
@@ -233,7 +240,7 @@ export default function ChannelDashboardView() {
                                         <div className="h-32 bg-gray-100 relative w-full overflow-hidden">
                                             {mod.cover_image ? (
                                                 <img
-                                                    src={`${API_BASE_URL}/uploads/channel_modules/${mod.cover_image}`}
+                                                    src={mod.cover_image.startsWith("http") ? mod.cover_image : `${API_BASE_URL}/uploads/channel_modules/${mod.cover_image}`}
                                                     alt={mod.name}
                                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                                 />
@@ -258,7 +265,6 @@ export default function ChannelDashboardView() {
                                             </div>
 
                                             <div>
-                                                {/* Skills Row */}
                                                 {mod.skills && mod.skills.length > 0 && (
                                                     <div className="flex flex-wrap gap-1 mb-3">
                                                         {mod.skills.map((skill, idx) => (
@@ -269,7 +275,6 @@ export default function ChannelDashboardView() {
                                                     </div>
                                                 )}
 
-                                                {/* Teacher / Host Section */}
                                                 {mod.co_host ? (
                                                     <div className="pt-2.5 border-t border-gray-100 flex items-center gap-2">
                                                         <div className="h-5 w-5 rounded-full bg-gray-900 text-white text-[9px] flex items-center justify-center font-bold font-mono">

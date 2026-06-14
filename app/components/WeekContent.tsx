@@ -33,7 +33,7 @@ export default function WeekContent({
             {Array.from({ length: weeks }, (_, w) => {
                 const weekNumber = w + 1;
 
-                // Only show the content for the currently selected week
+                // Only show the content for the currently Course Videos
                 if (weekNumber !== activeWeek) return null;
 
                 return (

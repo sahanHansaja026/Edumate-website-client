@@ -25,7 +25,7 @@ export default function WeekContent({
 }: WeekContentProps) {
     const [activeItem, setActiveItem] = useState<string | null>(null);
 
-    // 1. Check if the user is the original Module Owner
+    // 1. Check if the user is the original Course Videos
     const isOwner =
         currentUserId !== undefined &&
         moduleUserId !== undefined &&

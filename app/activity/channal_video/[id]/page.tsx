@@ -7,13 +7,13 @@ import { API_BASE_URL } from "@/app/config/api";
 import {
     ChevronLeft,
     ExternalLink,
-    Lock,
     Clock,
     Video as VideoIcon,
     Calendar,
     AlertCircle,
     Play
 } from "lucide-react";
+import { getUser } from "@/app/services/authService";
 
 type VideoData = {
     id: number;
@@ -27,28 +27,73 @@ type VideoData = {
     close_date?: string;
 };
 
+type UserData = {
+    id: number;
+    email: string;
+};
+
 export default function ViewVideoPage() {
     const params = useParams();
     const router = useRouter();
     const id = params.id as string;
 
+    const [user, setUser] = useState<UserData | null>(null);
     const [video, setVideo] = useState<VideoData | null>(null);
+    const [hasAccess, setHasAccess] = useState<boolean | null>(null);
     const [loading, setLoading] = useState(true);
 
+    // 1. Handle User Session Hydration on Mount
     useEffect(() => {
-        if (id) {
-            fetchVideo();
+        const currentUser = getUser();
+        if (currentUser) {
+            setUser(currentUser);
+        } else {
+            // Unauthenticated: Trigger automatic redirection
+            router.push("/errors/autharization");
         }
-    }, [id]);
+    }, [router]);
 
-    const fetchVideo = async () => {
+    // 2. Fetch Video and Access Rules when both ID and User are Ready
+    useEffect(() => {
+        if (id && user) {
+            fetchVideoAndCheckAccess(user);
+        }
+    }, [id, user]);
+
+    // 3. Handle Unauthorized Access Redirection
+    useEffect(() => {
+        if (hasAccess === false) {
+            router.push("/errors/autharization");
+        }
+    }, [hasAccess, router]);
+
+    const fetchVideoAndCheckAccess = async (currentUser: UserData) => {
         try {
-            const res = await fetch(`${API_BASE_URL}/videos/${id}`);
-            if (!res.ok) throw new Error("Failed to fetch video resource");
-            const data = await res.json();
-            setVideo(data);
+            // Fetch Video Metadata
+            const videoRes = await fetch(`${API_BASE_URL}/videos/${id}`);
+            if (!videoRes.ok) throw new Error("Failed to fetch video resource");
+            const videoData = await videoRes.json();
+
+            // Query parameters structure for FastAPI backend authorization guard
+            const accessQueryParams = new URLSearchParams({
+                user_id: String(currentUser.id),
+                student_email: currentUser.email
+            });
+
+            // Verification check query execution
+            const accessRes = await fetch(
+                `${API_BASE_URL}/video-access/check/${id}?${accessQueryParams.toString()}`
+            );
+
+            if (!accessRes.ok) throw new Error("Failed to verify access permissions");
+            const accessData = await accessRes.json();
+
+            setVideo(videoData);
+            setHasAccess(accessData.access); // Pulls access boolean dynamically
         } catch (error) {
-            console.error("Error fetching video details:", error);
+            console.error("Error executing secure gateway layout:", error);
+            // Fallback: If API fails, redirect to authorization error page
+            router.push("/errors/autharization");
         } finally {
             setLoading(false);
         }
@@ -68,7 +113,6 @@ export default function ViewVideoPage() {
 
     const status = getStatus();
 
-    // Resolves S3 cloud URLs cleanly without breaking local environment switchbacks
     const resolveMediaUrl = (urlPath: string | undefined) => {
         if (!urlPath) return undefined;
         if (urlPath.startsWith("http://") || urlPath.startsWith("https://")) {
@@ -77,7 +121,8 @@ export default function ViewVideoPage() {
         return `${API_BASE_URL}/${urlPath}`;
     };
 
-    if (loading) {
+    // 1. LOADING STATE (Shows while checking authentication & backend validation)
+    if (loading || !user || hasAccess === false) {
         return (
             <div className="min-h-screen bg-white p-6 flex flex-col items-center justify-center">
                 <div className="w-full max-w-4xl animate-pulse">
@@ -89,6 +134,7 @@ export default function ViewVideoPage() {
         );
     }
 
+    // 2. VIDEO NOT FOUND STATE
     if (!video) {
         return (
             <div className="min-h-screen bg-white flex items-center justify-center p-6">
@@ -104,6 +150,7 @@ export default function ViewVideoPage() {
         );
     }
 
+    // 3. GRANTED ACCESS SECURE RENDER VIEW
     return (
         <div className="min-h-screen bg-white text-gray-900">
             {/* NAVIGATION HEADER */}
@@ -159,7 +206,6 @@ export default function ViewVideoPage() {
                                 </div>
                             ) : (
                                 <div className="border border-gray-200 bg-gray-50 p-1 md:p-2 shadow-2xl">
-                                    {/* Thumbnail Poster Preview Container */}
                                     <div className="relative aspect-video bg-gray-100 w-full flex-shrink-0 overflow-hidden group">
                                         {video.thumbnail_url ? (
                                             <img
@@ -173,7 +219,6 @@ export default function ViewVideoPage() {
                                             </div>
                                         )}
 
-                                        {/* Overlay Content over Poster */}
                                         <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center text-center p-6 transition-all group-hover:bg-black/75">
                                             <ExternalLink className="w-10 h-10 mx-auto mb-4 text-white opacity-40 group-hover:scale-110 transition-transform" />
                                             <h3 className="text-lg md:text-xl mb-2 font-serif text-white">External Media Resource</h3>
@@ -194,7 +239,9 @@ export default function ViewVideoPage() {
                             )
                         ) : (
                             <div className="bg-gray-50 border-2 border-dashed border-gray-200 p-20 text-center">
-                                <Lock className="w-10 h-10 mx-auto text-gray-300 mb-4" />
+                                <div className="w-10 h-10 mx-auto bg-gray-200 rounded-full flex items-center justify-center text-gray-400 font-bold mb-4">
+                                    !
+                                </div>
                                 <h3 className="text-lg font-bold uppercase tracking-widest text-red-600">{status}</h3>
                                 <p className="text-gray-500 mt-2">
                                     {status === "LOCKED"

@@ -172,7 +172,7 @@ export default function WeekItemInfo({ moduleId }: Props) {
                 ...formattedAssignments,
             ];
 
-            // SORT BY WEEK
+            // SORT Course Videos
             mergedItems.sort((a, b) => a.week - b.week);
 
             setItems(mergedItems);
@@ -313,22 +313,22 @@ export default function WeekItemInfo({ moduleId }: Props) {
 
                         let detailsHref = "";
                         if (item.type === "content") {
-                            detailsHref = `/activity/content/${item.assignment_id}`;
+                            detailsHref = `/activity/channal_content/${item.assignment_id}`;
                         } else if (item.type === "quiz") {
                             detailsHref = `/channal_quiz_system/create_questions/${item.id}?module_id=${moduleId}`;
                         } else if (item.type === "video") {
-                            detailsHref = `/activity/video/${item.id}`;
+                            detailsHref = `/activity/channal_video/${item.id}`;
                         } else if (item.type === "assignment") {
-                            detailsHref = `/activity/assignment/${item.id}`;
+                            detailsHref = `/activity/channal_assignment/${item.id}`;
                         }
 
                         let editHref = "";
                         if (item.type === "content") {
-                            editHref = `/pages/content/edit/${item.assignment_id}`;
+                            editHref = `/pages/channal_content/edit/${item.assignment_id}`;
                         } else if (item.type === "quiz") {
                             editHref = `/channal_quiz_system/edit_quiz/${item.id}`;
                         } else if (item.type === "video") {
-                            editHref = `/pages/video/edit/${item.id}`;
+                            editHref = `/pages/channal_video/edit/${item.id}`;
                         } else if (item.type === "assignment") {
                             editHref = `/channal/assinment_edit/${item.id}`;
                         }
