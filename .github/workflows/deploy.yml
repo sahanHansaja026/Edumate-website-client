@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 📥 Checkout repo
       - name: Checkout code
         uses: actions/checkout@v3
 
@@ -17,10 +18,10 @@ jobs:
       - name: Login to Docker Hub
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-      # 🐳 Build image
+      # 🐳 Build Docker image (ROOT FIX)
       - name: Build Docker image
         run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/nextjs-app:latest ./client
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/nextjs-app:latest .
 
       # 📤 Push image
       - name: Push Docker image
