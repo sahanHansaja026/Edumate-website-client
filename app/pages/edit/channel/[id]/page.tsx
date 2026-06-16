@@ -404,6 +404,9 @@ export default function UpdateChannelPage() {
                                     <label htmlFor="coHosts" className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
                                         Faculty Sub-members Whitelist (Emails)
                                     </label>
+                                    <p className="text-xs text-gray-500">
+                                        Only valid email addresses can be added. Use Space or Enter to confirm.
+                                    </p>
                                     <div className="w-full p-2.5 bg-white border border-gray-300 rounded-xl focus-within:ring-2 focus-within:ring-gray-900 transition-all">
                                         <div className="flex flex-wrap gap-2 items-center">
                                             {coHosts.map((email) => (

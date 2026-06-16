@@ -44,7 +44,7 @@ export default function DashboardPage() {
                 <header>
                     <h1 className="text-4xl font-black tracking-tighter">DASHBOARD</h1>
                     <p className="text-gray-500 font-medium">
-                        Managing your ModuleMate workspace as a{" "}
+                        Managing your EduMate workspace as a{" "}
                         <span className="text-gray-900 underline underline-offset-4 capitalize">{role}</span>
                     </p>
                 </header>

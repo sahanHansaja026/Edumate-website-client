@@ -29,7 +29,7 @@ export default function Navbar({ currentRole, onRoleChange }: NavbarProps) {
             {/* Brand Logo */}
             <div className="flex items-center gap-3">
                 <GraduationCap className="h-7 w-7 text-gray-900" />
-                <span className="text-lg font-black tracking-tight text-gray-900">ModuleMate</span>
+                <span className="text-lg font-black tracking-tight text-gray-900">EduMate</span>
             </div>
 
             {/* Dynamic Role Switcher (Simulated environment controller) */}

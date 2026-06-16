@@ -12,8 +12,6 @@ import {
 } from "lucide-react";
 import { getUser } from "@/app/services/authService";
 
-// Mocking getUser if it comes from an external auth utility
-// Replace this with your actual import path, e.g., import { getUser } from '@/utils/auth';
 
 
 interface StudentGrading {
@@ -34,67 +32,56 @@ export default function Page() {
     const router = useRouter();
     const assignmentId = params?.id as string;
 
+    // 1. Setup user state
     const [user, setUser] = useState<any>(null);
-    const [isVerifying, setIsVerifying] = useState(true); // Gate content until auth check clears
     const [data, setData] = useState<AssignmentData | null>(null);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true); // Start as true since we are checking user & loading metrics
     const [error, setError] = useState<string | null>(null);
 
-    // 1. Fetch current logged-in user on mount
+    // 2. Get user on component mount
     useEffect(() => {
-        const currentUser = getUser();
-        setUser(currentUser);
+        // Replace this fallback logic if getUser() is imported from elsewhere
+        if (typeof window !== "undefined") {
+            const currentUser = getUser();
+            setUser(currentUser);
+        }
     }, []);
 
-    // 2. Core Security Check: Verify module access before fetching grades
-    useEffect(() => {
-        const verifyAccess = async () => {
-            // Wait until both assignmentId from route and user details from mount are ready
-            if (!assignmentId || !user) return;
+    // 3. Handle access verification and data loading once assignmentId AND user are ready
+    const loadData = async (currentUserId: string | number) => {
+        if (!assignmentId) return;
 
-            try {
-                // FastAPI Form(...) parsing requires URLSearchParams payload
-                const formData = new URLSearchParams();
-                formData.append("assignment_id", assignmentId);
-                formData.append("current_user_id", String(user.id || user.user_id));
-
-                const res = await fetch(`${API_BASE_URL}/module-access/check`, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/x-www-form-urlencoded",
-                    },
-                    body: formData,
-                });
-
-                if (res.status === 403 || res.status === 401) {
-                    router.push("/errors/autharization");
-                    return;
-                }
-
-                if (!res.ok) {
-                    const errData = await res.json().catch(() => ({}));
-                    throw new Error(errData?.detail || "Access verification failed.");
-                }
-
-                // If authorization passes, remove security gate and load page data
-                setIsVerifying(false);
-                loadData();
-
-            } catch (err: any) {
-                setError(err.message);
-                setIsVerifying(false);
-            }
-        };
-
-        verifyAccess();
-    }, [assignmentId, user]);
-
-    // 3. Fetch grading data handler
-    const loadData = async () => {
         setLoading(true);
         setError(null);
 
         try {
+            // Prepare Form Data payload for FastAPI's Form(...) body expectations
+            const formData = new URLSearchParams();
+            formData.append("assignment_id", assignmentId);
+            formData.append("current_user_id", currentUserId.toString());
+
+            // Perform Authorization verification request
+            const authRes = await fetch(`${API_BASE_URL}/assignment-access/check`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
+                body: formData,
+            });
+
+            // Redirect immediately if backend issues a 403 Forbidden status
+            if (authRes.status === 403) {
+                router.push("/errors/autharization");
+                return;
+            }
+
+            // Handle alternative standard error statuses (like 404)
+            if (!authRes.ok) {
+                const authErrData = await authRes.json().catch(() => ({}));
+                throw new Error(authErrData?.detail || `Access verification failed: ${authRes.status}`);
+            }
+
+            // Authorization passed, execute secondary fetch call for dataset grading metrics
             const res = await fetch(`${API_BASE_URL}/assignment_grading/${assignmentId}`);
 
             if (!res.ok) {
@@ -111,6 +98,18 @@ export default function Page() {
         }
     };
 
+    // 4. Watch for both assignmentId and user state changes before executing the pipeline
+    useEffect(() => {
+        // Only run when we safely have the assignment ID and the logged-in user's ID
+        if (assignmentId && user?.id) {
+            loadData(user.id);
+        } else if (assignmentId && user === null && !loading) {
+            // Optional: If user check finished and no user exists, redirect to login
+            setError("User authentication required.");
+            setLoading(false);
+        }
+    }, [assignmentId, user]);
+
     // Helper function to safely render dates without breaking the render engine
     const formatDate = (dateStr: string | null) => {
         if (!dateStr) return "—";
@@ -124,25 +123,12 @@ export default function Page() {
         }
     };
 
-    // Show spinner during initial module access permission check
-    if (isVerifying) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
-                <div className="flex flex-col items-center gap-4">
-                    <div className="w-10 h-10 border-4 border-gray-200 border-t-gray-900 rounded-full animate-spin"></div>
-                    <p className="text-sm font-semibold text-gray-600">Verifying Permissions...</p>
-                </div>
-            </div>
-        );
-    }
-
-    // Show spinner during active grading payload fetch
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
                 <div className="flex flex-col items-center gap-4">
                     <div className="w-10 h-10 border-4 border-gray-200 border-t-gray-900 rounded-full animate-spin"></div>
-                    <p className="text-sm font-semibold text-gray-600">Loading Grading Data...</p>
+                    <p className="text-sm font-semibold text-gray-600">Verifying Permissions & Loading Data...</p>
                 </div>
             </div>
         );
@@ -208,7 +194,7 @@ export default function Page() {
                                                 <tr
                                                     key={index}
                                                     onClick={() =>
-                                                        router.push(`/assignment_system/score?assignment_id=${assignmentId}&student_id=${student.user_id}`)
+                                                        router.push(`/channal_assignment_system/score?assignment_id=${assignmentId}&student_id=${student.user_id}`)
                                                     }
                                                     className="border-b border-gray-100 hover:bg-gray-50 transition cursor-pointer"
                                                 >

@@ -1,6 +1,6 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation"; // Added useRouter
 import { useEffect, useState, Suspense } from "react";
 import { getUser } from "@/app/services/authService";
 import { API_BASE_URL } from "@/app/config/api";
@@ -15,11 +15,14 @@ type Subscription = {
 
 function SubscriptionContent() {
     const searchParams = useSearchParams();
+    const router = useRouter(); // Initialize router
     const reason = searchParams.get("reason");
 
     const [user, setUser] = useState<{ id: number; email: string } | null>(null);
     const [subscription, setSubscription] = useState<Subscription | null>(null);
-    const [isLoading, setIsLoading] = useState<string | null>(null);
+
+    // Toggle state to switch between 1 Month and 6 Months for the Pro Plan
+    const [proBillingCycle, setProBillingCycle] = useState<"1m" | "6m">("1m");
 
     const currentPlan = subscription?.plan_name ?? "free";
 
@@ -44,38 +47,48 @@ function SubscriptionContent() {
         }
     }, [user]);
 
-    const handlePlanUpdate = async (targetPlan: "free" | "premium" | "edu") => {
-        if (!user) return alert("Please log in to update your EduMate plan.");
+    // HANDLES FORWARDING INSTEAD OF DIRECT MUTATION
+    const handlePlanSelect = (targetPlan: "free" | "premium" | "edu") => {
+        if (!user) return alert("Please log in to continue with your EduMate plan.");
 
-        setIsLoading(targetPlan);
+        const startDate = new Date();
+        let expireDate = new Date();
+        let validPeriod = "Lifetime";
 
-        try {
-            const formData = new URLSearchParams();
-            formData.append("subscription_type", targetPlan);
-            formData.append("status", "active");
-
-            const res = await fetch(`${API_BASE_URL}/subscription/update/${user.id}`, {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                },
-                body: formData.toString(),
-            });
-
-            if (!res.ok) {
-                const errorData = await res.json();
-                throw new Error(errorData.detail || "Failed to update subscription");
+        // Generate dates and periods context based on target selection
+        if (targetPlan === "premium") {
+            if (proBillingCycle === "1m") {
+                expireDate.setMonth(startDate.getMonth() + 1);
+                validPeriod = "1 Month";
+            } else {
+                expireDate.setMonth(startDate.getMonth() + 6);
+                validPeriod = "6 Months";
             }
-
-            await fetchSubscription(user.id);
-            alert(`Welcome to your new ${targetPlan.toUpperCase()} plan on EduMate!`);
-
-        } catch (err: any) {
-            console.error("Update error:", err);
-            alert(`Could not update plan: ${err.message}`);
-        } finally {
-            setIsLoading(null);
+        } else if (targetPlan === "edu") {
+            expireDate.setFullYear(startDate.getFullYear() + 1);
+            validPeriod = "1 Year";
+        } else {
+            // Free Tier fallback layouts
+            expireDate.setFullYear(startDate.getFullYear() + 100);
+            validPeriod = "Lifetime";
         }
+
+        // Clean formatting for URL string transport (YYYY-MM-DD)
+        const formattedStart = startDate.toISOString().split("T")[0];
+        const formattedExpire = expireDate.toISOString().split("T")[0];
+
+        // Construct query parameters cleanly
+        const queryParams = new URLSearchParams({
+            user_id: user.id.toString(),
+            user_email: user.email,
+            plan_type: targetPlan,
+            start_date: formattedStart,
+            valid_period: validPeriod,
+            expire_date: formattedExpire,
+        });
+
+        // Redirect safely to your transaction handling panel page
+        router.push(`/submitplane?${queryParams.toString()}`);
     };
 
     return (
@@ -138,6 +151,11 @@ function SubscriptionContent() {
                                     )}
                                 </div>
 
+                                <div className="mt-5 border-t border-slate-100 pt-4">
+                                    <span className="text-3xl font-extrabold text-slate-900">Free</span>
+                                    <span className="text-xs text-slate-400 ml-1">/ lifetime access</span>
+                                </div>
+
                                 <div className="mt-6 space-y-4">
                                     <div>
                                         <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Learning Limits</h4>
@@ -159,14 +177,14 @@ function SubscriptionContent() {
                             </div>
 
                             <button
-                                onClick={() => handlePlanUpdate("free")}
-                                disabled={currentPlan === "free" || isLoading !== null}
+                                onClick={() => handlePlanSelect("free")}
+                                disabled={currentPlan === "free"}
                                 className={`mt-8 w-full py-2.5 text-sm font-medium rounded-lg border transition-colors ${currentPlan === "free"
                                     ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
                                     : "bg-white text-slate-600 border-slate-300 hover:bg-slate-50"
                                     }`}
                             >
-                                {isLoading === "free" ? "Processing..." : currentPlan === "free" ? "Your Current Plan" : "Downgrade to Free"}
+                                {currentPlan === "free" ? "Your Current Plan" : "Select Free Plan"}
                             </button>
                         </div>
 
@@ -176,10 +194,48 @@ function SubscriptionContent() {
                                 <div className="flex justify-between items-start">
                                     <div>
                                         <h3 className="text-lg font-bold text-indigo-900">Professional Teacher</h3>
-                                        <p className="text-xs text-indigo-600 mt-1">For creators, tutors & independent educators</p>
+                                        <p className="text-xs text-indigo-600 mt-1">For creators, tutors & educators</p>
                                     </div>
                                     {currentPlan === "premium" && (
                                         <span className="text-xs px-2 py-1 bg-indigo-600 text-white font-medium rounded">Active</span>
+                                    )}
+                                </div>
+
+                                {/* DURATION MODES TOGGLE SWITCH */}
+                                <div className="mt-4 bg-slate-100 p-1 rounded-lg flex border border-slate-200">
+                                    <button
+                                        type="button"
+                                        onClick={() => setProBillingCycle("1m")}
+                                        className={`flex-1 text-center py-1 text-xs font-semibold rounded-md transition-all ${proBillingCycle === "1m" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-800"}`}
+                                    >
+                                        1 Month
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setProBillingCycle("6m")}
+                                        className={`flex-1 text-center py-1 text-xs font-semibold rounded-md transition-all relative ${proBillingCycle === "6m" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-800"}`}
+                                    >
+                                        6 Months
+                                        <span className="absolute -top-2.5 -right-1 bg-indigo-600 text-white text-[9px] px-1.5 py-0.5 rounded-full font-bold shadow-sm">
+                                            Save 500
+                                        </span>
+                                    </button>
+                                </div>
+
+                                <div className="mt-4 border-t border-slate-100 pt-4">
+                                    {proBillingCycle === "1m" ? (
+                                        <div>
+                                            <span className="text-3xl font-extrabold text-slate-900">500 LKR</span>
+                                            <span className="text-xs text-slate-400 ml-1">/ month</span>
+                                        </div>
+                                    ) : (
+                                        <div>
+                                            <span className="text-3xl font-extrabold text-slate-900">2,500 LKR</span>
+                                            <span className="text-xs text-slate-400 ml-1">/ 6 months</span>
+                                            <p className="text-[11px] text-emerald-600 font-medium mt-0.5">
+                                                Stripped down from <span className="line-through">3,000 LKR</span>
+                                            </p>
+                                        </div>
                                     )}
                                 </div>
 
@@ -188,30 +244,26 @@ function SubscriptionContent() {
                                         <h4 className="text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-2">Teaching Power</h4>
                                         <ul className="text-sm space-y-2 text-slate-700">
                                             <li className="flex items-center gap-2 font-medium text-slate-900">✓ Unlimited Course Modules</li>
-                                            <li className="flex items-center gap-2 font-medium text-slate-900">✓ Unlimited Lesson Video Uploads</li>
-                                            <li className="flex items-center gap-2 font-medium text-slate-900">✓ Unlimited Content Nodes & Resources</li>
+                                            <li className="flex items-center gap-2 font-medium text-slate-900">✓ Unlimited Lesson Videos</li>
+                                            <li className="flex items-center gap-2 font-medium text-slate-900">✓ Unlimited Content Nodes</li>
                                         </ul>
                                     </div>
                                     <div>
                                         <h4 className="text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-2">Evaluation Metrics</h4>
                                         <ul className="text-sm space-y-2 text-slate-700">
-                                            <li className="flex items-center gap-2">✓ Unlimited Quizzes & Question Banks</li>
-                                            <li className="flex items-center gap-2">✓ Unlimited Homework & Assignments</li>
-                                            <li className="flex items-center gap-2">✓ Custom Branded Teaching Channels</li>
+                                            <li className="flex items-center gap-2">✓ Unlimited Quizzes & Banks</li>
+                                            <li className="flex items-center gap-2">✓ Unlimited Assignments</li>
+                                            <li className="flex items-center gap-2">✓ Custom Branded Channels</li>
                                         </ul>
                                     </div>
                                 </div>
                             </div>
 
                             <button
-                                onClick={() => handlePlanUpdate("premium")}
-                                disabled={currentPlan === "premium" || isLoading !== null}
-                                className={`mt-8 w-full py-2.5 text-sm font-semibold rounded-lg transition-colors ${currentPlan === "premium"
-                                    ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
-                                    : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm"
-                                    }`}
+                                onClick={() => handlePlanSelect("premium")}
+                                className="mt-8 w-full py-2.5 text-sm font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm transition-colors"
                             >
-                                {isLoading === "premium" ? "Processing..." : currentPlan === "premium" ? "Your Current Plan" : "Upgrade to Pro Teacher"}
+                                Continue to Submit Payment
                             </button>
                         </div>
 
@@ -221,11 +273,16 @@ function SubscriptionContent() {
                                 <div className="flex justify-between items-start">
                                     <div>
                                         <h3 className="text-lg font-bold text-emerald-900">EduMate Campus (Edu Pro)</h3>
-                                        <p className="text-xs text-emerald-700 mt-1">Multi-seat licenses for schools & universities</p>
+                                        <p className="text-xs text-emerald-700 mt-1">Multi-seat licenses for institutions</p>
                                     </div>
                                     {currentPlan === "edu" && (
                                         <span className="text-xs px-2 py-1 bg-emerald-600 text-white font-medium rounded">Active</span>
                                     )}
+                                </div>
+
+                                <div className="mt-5 border-t border-slate-100 pt-4">
+                                    <span className="text-3xl font-extrabold text-slate-900">25,000 LKR</span>
+                                    <span className="text-xs text-slate-400 ml-1">/ 1 year access</span>
                                 </div>
 
                                 <div className="mt-6 space-y-4">
@@ -233,7 +290,7 @@ function SubscriptionContent() {
                                         <h4 className="text-xs font-semibold text-emerald-600/70 uppercase tracking-wider mb-2">Campus Administration</h4>
                                         <ul className="text-sm space-y-2 text-slate-700">
                                             <li className="flex items-center gap-2 font-medium text-emerald-950">🏛 Unified School Dashboard</li>
-                                            <li className="flex items-center gap-2 font-medium text-emerald-950">🏛 Smart Roles (Admins, Teachers, Students)</li>
+                                            <li className="flex items-center gap-2 font-medium text-emerald-950">🏛 Smart Roles (Admins & Staff)</li>
                                             <li className="flex items-center gap-2 font-medium text-emerald-950">🏛 Bulk Course Provisioning Tools</li>
                                         </ul>
                                     </div>
@@ -241,22 +298,18 @@ function SubscriptionContent() {
                                         <h4 className="text-xs font-semibold text-emerald-600/70 uppercase tracking-wider mb-2">Academic Operations</h4>
                                         <ul className="text-sm space-y-2 text-slate-700">
                                             <li className="flex items-center gap-2">✓ School-Wide Shared Resource Catalogs</li>
-                                            <li className="flex items-center gap-2">✓ Inter-departmental Collaboration Sync</li>
-                                            <li className="flex items-center gap-2">✓ Detailed Cohort & Performance Analytics</li>
+                                            <li className="flex items-center gap-2">✓ Inter-departmental Collaboration</li>
+                                            <li className="flex items-center gap-2">✓ Detailed Cohort Performance Sync</li>
                                         </ul>
                                     </div>
                                 </div>
                             </div>
 
                             <button
-                                onClick={() => handlePlanUpdate("edu")}
-                                disabled={currentPlan === "edu" || isLoading !== null}
-                                className={`mt-8 w-full py-2.5 text-sm font-semibold rounded-lg transition-colors ${currentPlan === "edu"
-                                    ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
-                                    : "bg-emerald-700 text-white hover:bg-emerald-800 shadow-sm"
-                                    }`}
+                                onClick={() => handlePlanSelect("edu")}
+                                className="mt-8 w-full py-2.5 text-sm font-semibold rounded-lg bg-emerald-700 text-white hover:bg-emerald-800 shadow-sm transition-colors"
                             >
-                                {isLoading === "edu" ? "Processing..." : currentPlan === "edu" ? "Your Current Plan" : "Request Campus Plan"}
+                                Continue to Submit Institution Details
                             </button>
                         </div>
 
@@ -273,7 +326,6 @@ function SubscriptionContent() {
     );
 }
 
-// Next.js requires useSearchParams to be wrapped in a Suspense boundary for static HTML generation builds
 export default function SubscriptionPage() {
     return (
         <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center text-slate-500">Loading EduMate Space...</div>}>

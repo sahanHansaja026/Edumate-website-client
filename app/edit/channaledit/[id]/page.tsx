@@ -61,7 +61,7 @@ export default function EditOrCreateModule() {
                 }
 
                 if (data.cover_image) {
-                    setCoverPreview(`${API_BASE_URL}/uploads/channel_modules/${data.cover_image}`);
+                    setCoverPreview(data.cover_image.startsWith("http") ? data.cover_image : `${API_BASE_URL}/uploads/channel_modules/${data.cover_image}`);
                 }
             } catch (err) {
                 console.error("Failed loading data setup context: ", err);

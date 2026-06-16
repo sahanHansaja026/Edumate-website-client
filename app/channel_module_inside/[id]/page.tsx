@@ -425,7 +425,7 @@ export default function CoursePage() {
                                 <span className="text-xs font-medium hidden sm:inline">Discussion</span>
                             </button>
                             {/* Grade Button */}
-                            <Link href={`/modules/${id}/grades`}>
+                            <Link href={`/grades/student_view/${id}`}>
                                 <button
                                     className="p-2 rounded-lg transition-colors flex items-center gap-1.5 border shadow-sm bg-white text-gray-500 border-gray-200 hover:bg-gray-100 hover:text-gray-700"
                                     title="View Grades"

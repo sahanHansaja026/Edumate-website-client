@@ -1,415 +1,667 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import React, { useState, useEffect } from "react";
+import Image from "next/image";
+import Script from "next/script"; // Next.js script optimization component
+import {
+    BookOpen,
+    Users,
+    Lock,
+    Globe,
+    BarChart2,
+    Video,
+    CheckCircle,
+    Layers,
+    ArrowRight,
+    GraduationCap,
+    Building2,
+    Sparkles,
+    Send,
+} from "lucide-react";
 
-// ─── Animated counter hook ───────────────────────────────────────────────────
-function useCounter(target: number, duration = 1800, start = false) {
-    const [count, setCount] = useState(0);
+// ─── REPLACE WITH YOUR ADSENSE CLIENT ID ─────────────────────────────────────
+const ADSENSE_CLIENT_ID = "ca-pub-XXXXXXXXXXXXXXXX";
+
+// ─── Data ────────────────────────────────────────────────────────────────────
+
+const features = [
+    {
+        icon: <Lock className="w-6 h-6" />,
+        title: "Access Control",
+        desc: "Channel admins decide exactly who sees what — modules, quizzes, and assignments stay private until you grant permission.",
+    },
+    {
+        icon: <BookOpen className="w-6 h-6" />,
+        title: "Structured Modules",
+        desc: "Organize learning into focused modules with assignments, quizzes, and rich content — all in one place.",
+    },
+    {
+        icon: <Globe className="w-6 h-6" />,
+        title: "Open Public Courses",
+        desc: "Anyone can publish a module for the world to discover. No gatekeeping — just knowledge shared freely.",
+    },
+    {
+        icon: <Video className="w-6 h-6" />,
+        title: "Live Sessions",
+        desc: "Conduct real-time classes and meetings directly within your channel. No third-party tools needed.",
+    },
+    {
+        icon: <BarChart2 className="w-6 h-6" />,
+        title: "Real-Time Tracking",
+        desc: "Monitor submissions, quiz results, and student activity as it happens — not days later.",
+    },
+    {
+        icon: <Users className="w-6 h-6" />,
+        title: "Student Management",
+        desc: "Invite, grant access, and track cohorts of students with a simple, visual interface.",
+    },
+];
+
+const models = [
+    {
+        icon: <Building2 className="w-8 h-8 text-blue-600" />,
+        label: "For Institutions & Teachers",
+        title: "Channel-Based Learning",
+        desc: "Create a private digital classroom for your school, academy, or organization. Control enrollment, manage content, and track every student — all within a secure channel.",
+        bullets: [
+            "Invite-only access control",
+            "Assignments & graded quizzes",
+            "Live sessions built-in",
+            "Real-time performance analytics",
+        ],
+        img: "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=800&q=80",
+        imgAlt: "A university lecturer presenting to students in a modern classroom, representing institutional channel-based learning on EduMate",
+        reverse: false,
+    },
+    {
+        icon: <Globe className="w-8 h-8 text-emerald-600" />,
+        label: "For Everyone",
+        title: "Public Module System",
+        desc: "Share your expertise without barriers. Create a module, publish it, and let any learner in the world enroll — no approvals, no friction, just open education.",
+        bullets: [
+            "Free for all learners",
+            "Self-paced content",
+            "No access restrictions",
+            "Instant enrollment",
+        ],
+        img: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&q=80",
+        imgAlt: "Diverse group of people studying together on laptops in a bright open space, representing open public learning on EduMate",
+        reverse: true,
+    },
+];
+
+const stats = [
+    { value: "2", label: "Learning Models" },
+    { value: "∞", label: "Public Modules" },
+    { value: "100%", label: "Free for Students" },
+    { value: "1", label: "Unified Platform" },
+];
+
+const platformLayers = [
+    { icon: <Layers className="w-5 h-5" />, name: "Channel", color: "bg-blue-100 text-blue-700" },
+    { icon: <BookOpen className="w-5 h-5" />, name: "Modules", color: "bg-violet-100 text-violet-700" },
+    { icon: <CheckCircle className="w-5 h-5" />, name: "Assignments & Quizzes", color: "bg-amber-100 text-amber-700" },
+    { icon: <Users className="w-5 h-5" />, name: "Student Access", color: "bg-emerald-100 text-emerald-700" },
+];
+
+// ─── Ad Component ───────────────────────────────────────────────────────────
+function AdSlot({ adSlotId, style }: { adSlotId: string; style?: React.CSSProperties }) {
     useEffect(() => {
-        if (!start) return;
-        let startTime: number | null = null;
-        const step = (timestamp: number) => {
-            if (!startTime) startTime = timestamp;
-            const progress = Math.min((timestamp - startTime) / duration, 1);
-            setCount(Math.floor(progress * target));
-            if (progress < 1) requestAnimationFrame(step);
-        };
-        requestAnimationFrame(step);
-    }, [target, duration, start]);
-    return count;
-}
+        try {
+            // Push the advertisement container into the Google script initializer stack
+            ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({});
+        } catch (err) {
+            console.error("AdSense initialization layout block error: ", err);
+        }
+    }, []);
 
-// ─── Intersection Observer hook ──────────────────────────────────────────────
-function useInView(threshold = 0.15) {
-    const ref = useRef<HTMLDivElement>(null);
-    const [inView, setInView] = useState(false);
-    useEffect(() => {
-        const el = ref.current;
-        if (!el) return;
-        const obs = new IntersectionObserver(
-            ([entry]) => { if (entry.isIntersecting) { setInView(true); obs.disconnect(); } },
-            { threshold }
-        );
-        obs.observe(el);
-        return () => obs.disconnect();
-    }, [threshold]);
-    return { ref, inView };
-}
-
-// ─── Stat card ───────────────────────────────────────────────────────────────
-function StatCard({ value, suffix, label }: { value: number; suffix: string; label: string }) {
-    const { ref, inView } = useInView();
-    const count = useCounter(value, 1600, inView);
     return (
-        <div ref={ref} className="flex flex-col items-center gap-1">
-            <span className="text-4xl md:text-5xl font-black text-gray-900 tabular-nums tracking-tight">
-                {count}{suffix}
-            </span>
-            <span className="text-sm text-gray-500 font-medium uppercase tracking-widest">{label}</span>
+        <div className="w-full flex justify-center my-8 mx-auto overflow-hidden clear-both max-w-5xl px-6">
+            <div className="bg-slate-50 border border-dashed border-slate-200 p-2 rounded-xl w-full min-h-[90px] text-center flex flex-col justify-center items-center">
+                <span className="text-[10px] font-bold tracking-wider text-slate-400 uppercase mb-1">Advertisement</span>
+                <ins
+                    className="adsbygoogle"
+                    style={style || { display: "block", width: "100%", minWidth: "250px" }}
+                    data-ad-client={ADSENSE_CLIENT_ID}
+                    data-ad-slot={adSlotId}
+                    data-ad-format="auto"
+                    data-full-width-responsive="true"
+                />
+            </div>
         </div>
     );
 }
 
-// ─── Feature pill ────────────────────────────────────────────────────────────
-function FeaturePill({ icon, label }: { icon: string; label: string }) {
-    return (
-        <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-200 bg-white text-gray-700 text-sm font-medium shadow-sm hover:border-gray-400 hover:shadow-md transition-all duration-200">
-            <span className="text-base">{icon}</span> {label}
-        </span>
-    );
-}
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
-// ─── Timeline item ───────────────────────────────────────────────────────────
-function TimelineItem({
-    year, title, desc, last,
-}: { year: string; title: string; desc: string; last?: boolean }) {
-    const { ref, inView } = useInView();
-    return (
-        <div
-            ref={ref}
-            className={`relative flex gap-6 transition-all duration-700 ${inView ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-6"}`}
-        >
-            {/* spine */}
-            <div className="flex flex-col items-center">
-                <div className="w-3 h-3 rounded-full bg-gray-900 ring-4 ring-white mt-1 shrink-0" />
-                {!last && <div className="w-px flex-1 bg-gray-200 mt-1" />}
-            </div>
-            <div className="pb-10">
-                <span className="text-xs font-bold tracking-widest text-gray-400 uppercase">{year}</span>
-                <h4 className="text-lg font-bold text-gray-900 mt-0.5">{title}</h4>
-                <p className="text-gray-500 text-sm leading-relaxed mt-1">{desc}</p>
-            </div>
-        </div>
-    );
-}
-
-// ─── Social link ─────────────────────────────────────────────────────────────
-function SocialLink({ href, label, icon }: { href: string; label: string; icon: React.ReactNode }) {
-    return (
-        <a
-            href={href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group flex items-center gap-3 px-5 py-3 rounded-xl border border-gray-200 bg-white text-gray-700 font-medium text-sm hover:border-gray-900 hover:bg-gray-900 hover:text-white transition-all duration-200 shadow-sm"
-        >
-            <span className="w-5 h-5 flex items-center justify-center">{icon}</span>
-            {label}
-        </a>
-    );
-}
-
-// ─── Main page ────────────────────────────────────────────────────────────────
 export default function AboutPage() {
-    const { ref: heroRef, inView: heroIn } = useInView(0.05);
+    // Form State management
+    const [role, setRole] = useState<"teacher" | "student">("teacher");
+    const [formData, setFormData] = useState({
+        name: "",
+        email: "",
+        organization: "",
+        interest: "",
+    });
+    const [isSubmitted, setIsSubmitted] = useState(false);
 
-    const features = [
-        { icon: "🎓", label: "Teacher & Student Management" },
-        { icon: "📚", label: "Public & Private Modules" },
-        { icon: "🏫", label: "School Channels" },
-        { icon: "🔒", label: "Private Course Access" },
-        { icon: "🌐", label: "Open Learning for All" },
-        { icon: "🤝", label: "Collaborative Environment" },
-    ];
+    const handleFormSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        console.log("Submitted Data: ", { role, ...formData });
+        setIsSubmitted(true);
+    };
 
     return (
-        <main className="min-h-screen bg-white text-gray-900 font-sans">
-            {/* ── Nav ─────────────────────────────────────────────────────── */}
-            <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-gray-100">
-                <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-lg bg-gray-900 flex items-center justify-center">
-                            <span className="text-white text-sm font-black">B</span>
-                        </div>
-                        <span className="font-bold text-gray-900 text-sm tracking-tight hidden sm:block">
-                            Baniya&apos;s Code Universe
+        <main className="bg-white text-slate-900 antialiased overflow-x-hidden">
+            {/* Google AdSense Script Integration */}
+            <Script
+                id="adsense-init"
+                async
+                src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}`}
+                crossOrigin="anonymous"
+                strategy="afterInteractive"
+            />
+
+            {/* ── Hero ──────────────────────────────────────────────────────────── */}
+            <section className="relative min-h-[90vh] flex flex-col items-center justify-center px-6 pt-24 pb-16 text-center overflow-hidden">
+                <div
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0"
+                    style={{
+                        backgroundImage:
+                            "linear-gradient(to bottom, #EFF6FF 0%, #ffffff 60%)",
+                    }}
+                />
+                <div
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0 opacity-30"
+                    style={{
+                        backgroundImage:
+                            "radial-gradient(circle at 60% 20%, #BFDBFE 0%, transparent 55%), radial-gradient(circle at 20% 80%, #DDD6FE 0%, transparent 50%)",
+                    }}
+                />
+
+                <div className="relative z-10 max-w-4xl mx-auto">
+                    <span className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-blue-600 mb-6">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        Built by Baniya Technologies
+                    </span>
+
+                    <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold leading-[1.05] tracking-tight text-slate-900 mb-6">
+                        Education,{" "}
+                        <span className="bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent">
+                            reimagined
                         </span>
+                        .
+                    </h1>
+
+                    <p className="text-lg sm:text-xl text-slate-500 max-w-2xl mx-auto leading-relaxed mb-10">
+                        EduMate connects institutions, educators, and students in one
+                        unified platform — with structured channel-based classrooms for
+                        organisations and open modules for the world.
+                    </p>
+
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                        <a
+                            href="#models"
+                            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-200 hover:bg-blue-700 transition-colors"
+                        >
+                            Explore the platform <ArrowRight className="w-4 h-4" />
+                        </a>
+                        <a
+                            href="#join-form"
+                            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-3.5 text-sm font-semibold text-slate-700 hover:border-slate-300 transition-colors"
+                        >
+                            Join as Teacher / Student
+                        </a>
                     </div>
-                    <div className="flex items-center gap-1 text-sm">
-                        {["Home", "Products", "Blog", "Contact"].map((item) => (
-                            <a
-                                key={item}
-                                href="#"
-                                className="px-3 py-1.5 rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-colors font-medium"
+                </div>
+
+                {/* Hero image */}
+                <div className="relative z-10 mt-16 w-full max-w-5xl mx-auto rounded-2xl overflow-hidden shadow-2xl shadow-slate-200 border border-slate-100">
+                    <img
+                        src="https://images.unsplash.com/photo-1610484826967-09c5720778c7?w=1400&q=80"
+                        alt="Students engaging with digital learning content on laptops and tablets in a bright modern classroom, representing the EduMate platform experience"
+                        width={1400}
+                        height={700}
+                        className="w-full h-64 sm:h-96 object-cover rounded-2xl"
+                        loading="eager"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-white/20 to-transparent" />
+                </div>
+            </section>
+
+            {/* ── Ad Slot Placement 1: Top Responsive Banner ───────────────────── */}
+            <AdSlot adSlotId="1234567890" style={{ display: 'block', height: '90px' }} />
+
+            {/* ── Stats bar ─────────────────────────────────────────────────────── */}
+            <section className="border-y border-slate-100 bg-slate-50">
+                <div className="max-w-5xl mx-auto px-6 py-10 grid grid-cols-2 sm:grid-cols-4 gap-8 text-center">
+                    {stats.map((s) => (
+                        <div key={s.label}>
+                            <p className="text-4xl font-extrabold text-blue-600">{s.value}</p>
+                            <p className="mt-1 text-sm text-slate-500 font-medium">{s.label}</p>
+                        </div>
+                    ))}
+                </div>
+            </section>
+
+            {/* ── Mission ───────────────────────────────────────────────────────── */}
+            <section id="mission" className="max-w-5xl mx-auto px-6 py-24">
+                <div className="grid lg:grid-cols-2 gap-12 items-center">
+                    <div>
+                        <span className="text-xs font-bold uppercase tracking-widest text-blue-600">
+                            Our Mission
+                        </span>
+                        <h2 className="mt-3 text-4xl font-extrabold leading-tight text-slate-900">
+                            Simplify learning. <br /> Scale knowledge.
+                        </h2>
+                        <p className="mt-5 text-slate-500 leading-relaxed">
+                            Traditional learning platforms are either too rigid for open
+                            education or too chaotic for institutions that need structure and
+                            control. EduMate does both — giving every educator the tools they
+                            need, without the bloat they don't.
+                        </p>
+                        <p className="mt-4 text-slate-500 leading-relaxed">
+                            We believe quality education should be accessible to every learner
+                            on the planet, while institutions deserve a secure, professional
+                            environment to deliver it. EduMate is that bridge.
+                        </p>
+                    </div>
+
+                    <div className="relative rounded-2xl overflow-hidden shadow-xl">
+                        <Image
+                            src="https://images.unsplash.com/photo-1543269865-cbf427effbad?w=800&q=80"
+                            alt="A diverse group of students collaborating around a table with laptops, symbolising EduMate's mission to make learning accessible and collaborative"
+                            width={800}
+                            height={560}
+                            className="w-full h-72 lg:h-96 object-cover"
+                            unoptimized
+                        />
+                    </div>
+                </div>
+            </section>
+
+            {/* ── Two models ────────────────────────────────────────────────────── */}
+            <section
+                id="models"
+                className="bg-slate-50 border-y border-slate-100 py-24"
+            >
+                <div className="max-w-5xl mx-auto px-6">
+                    <div className="text-center mb-16">
+                        <span className="text-xs font-bold uppercase tracking-widest text-blue-600">
+                            How It Works
+                        </span>
+                        <h2 className="mt-3 text-4xl font-extrabold text-slate-900">
+                            Two ways to learn
+                        </h2>
+                        <p className="mt-3 text-slate-500 max-w-xl mx-auto">
+                            Whether you run an institution or just want to share what you
+                            know, EduMate has a model built for you.
+                        </p>
+                    </div>
+
+                    <div className="space-y-20">
+                        {models.map((m) => (
+                            <div
+                                key={m.title}
+                                className={`flex flex-col ${m.reverse ? "lg:flex-row-reverse" : "lg:flex-row"
+                                    } gap-10 items-center`}
                             >
-                                {item}
-                            </a>
+                                {/* Image */}
+                                <div className="w-full lg:w-1/2 rounded-2xl overflow-hidden shadow-lg flex-shrink-0">
+                                    <Image
+                                        src={m.img}
+                                        alt={m.imgAlt}
+                                        width={800}
+                                        height={500}
+                                        className="w-full h-64 lg:h-80 object-cover"
+                                        unoptimized
+                                    />
+                                </div>
+
+                                {/* Content */}
+                                <div className="w-full lg:w-1/2">
+                                    <div className="inline-flex items-center gap-2 rounded-xl bg-white border border-slate-100 px-4 py-2 shadow-sm mb-4">
+                                        {m.icon}
+                                        <span className="text-xs font-bold uppercase tracking-widest text-slate-500">
+                                            {m.label}
+                                        </span>
+                                    </div>
+                                    <h3 className="text-3xl font-extrabold text-slate-900 mb-3">
+                                        {m.title}
+                                    </h3>
+                                    <p className="text-slate-500 leading-relaxed mb-5">{m.desc}</p>
+                                    <ul className="space-y-2.5">
+                                        {m.bullets.map((b) => (
+                                            <li key={b} className="flex items-center gap-2.5 text-sm text-slate-700 font-medium">
+                                                <CheckCircle className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                                                {b}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </div>
                         ))}
                     </div>
                 </div>
-            </nav>
-
-            {/* ── Hero ────────────────────────────────────────────────────── */}
-            <section className="relative overflow-hidden">
-                {/* subtle grid bg */}
-                <div
-                    className="absolute inset-0 opacity-[0.03]"
-                    style={{
-                        backgroundImage:
-                            "linear-gradient(#111 1px,transparent 1px),linear-gradient(90deg,#111 1px,transparent 1px)",
-                        backgroundSize: "48px 48px",
-                    }}
-                />
-                <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-20 relative">
-                    <div
-                        ref={heroRef}
-                        className={`max-w-3xl transition-all duration-1000 ${heroIn ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
-                    >
-                        <span className="inline-flex items-center gap-2 text-xs font-bold tracking-widest uppercase text-gray-400 mb-6 border border-gray-200 px-3 py-1.5 rounded-full">
-                            <span className="w-1.5 h-1.5 rounded-full bg-gray-900 inline-block" />
-                            About Us
-                        </span>
-                        <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-[1.05] text-gray-900">
-                            Building the{" "}
-                            <span className="relative inline-block">
-                                future
-                                <span className="absolute bottom-1 left-0 w-full h-2 bg-gray-200 -z-10 rounded" />
-                            </span>{" "}
-                            of digital education
-                        </h1>
-                        <p className="mt-6 text-lg sm:text-xl text-gray-500 leading-relaxed max-w-2xl">
-                            Baniya&apos;s Code Universe is a one-person software studio on a mission to make
-                            learning accessible, organised, and beautifully simple for teachers, students,
-                            and institutions worldwide.
-                        </p>
-                    </div>
-                </div>
             </section>
 
-            {/* ── Stats bar ───────────────────────────────────────────────── */}
-            <section className="border-y border-gray-100 bg-gray-50">
-                <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-0 md:divide-x divide-gray-200">
-                        <StatCard value={1} suffix="" label="Products launched" />
-                        <StatCard value={1} suffix="" label="Passionate developer" />
-                        <StatCard value={4} suffix="+" label="Platform features" />
-                        <StatCard value={100} suffix="%" label="Open learning vision" />
-                    </div>
-                </div>
-            </section>
-
-            {/* ── Founder ─────────────────────────────────────────────────── */}
-            <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-                <div className="grid lg:grid-cols-2 gap-16 items-center">
-                    {/* avatar / visual */}
-                    <div className="relative flex justify-center lg:justify-start">
-                        <div className="relative w-64 h-64 sm:w-80 sm:h-80">
-                            {/* decorative rings */}
-                            <div className="absolute inset-0 rounded-full border-2 border-dashed border-gray-200 animate-[spin_20s_linear_infinite]" />
-                            <div className="absolute inset-4 rounded-full border border-gray-100" />
-                            {/* avatar */}
-                            <div className="absolute inset-8 rounded-full bg-gray-900 flex items-center justify-center shadow-2xl">
-                                <span className="text-white text-6xl font-black select-none">SH</span>
-                            </div>
-                            {/* floating badge */}
-                            <div className="absolute -bottom-3 -right-3 bg-white border border-gray-200 rounded-2xl px-4 py-2.5 shadow-lg">
-                                <p className="text-xs text-gray-400 font-medium">Founder & Developer</p>
-                                <p className="text-sm font-bold text-gray-900 mt-0.5">Sahan Hansaja</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* text */}
-                    <div>
-                        <h2 className="text-3xl sm:text-4xl font-black text-gray-900 tracking-tight">
-                            A solo developer with a universe-sized vision
-                        </h2>
-                        <p className="mt-5 text-gray-500 leading-relaxed">
-                            Hi — I&apos;m Sahan Hansaja, the founder, designer, and sole developer behind
-                            Baniya&apos;s Code Universe. I started this initiative to build meaningful digital
-                            products while sharing everything I learn with the wider developer community.
-                        </p>
-                        <p className="mt-4 text-gray-500 leading-relaxed">
-                            My first product, <span className="font-semibold text-gray-900">EduMate</span>, is a
-                            full-featured Learning Management System designed to connect teachers and students in
-                            one collaborative space — something I believe every school and educator deserves
-                            access to.
-                        </p>
-
-                        <div className="mt-8 flex flex-wrap gap-3">
-                            <SocialLink
-                                href="mailto:hansajasahan50@gmail.com"
-                                label="hansajasahan50@gmail.com"
-                                icon={
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
-                                        <rect x="2" y="4" width="20" height="16" rx="2" />
-                                        <path d="m2 7 10 7 10-7" />
-                                    </svg>
-                                }
-                            />
-                        </div>
-
-                        <div className="mt-4 flex flex-wrap gap-3">
-                            <SocialLink
-                                href="#"
-                                label="YouTube"
-                                icon={
-                                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
-                                        <path d="M23 7s-.3-2-1.2-2.8c-1.1-1.2-2.4-1.2-3-1.3C16.2 2.8 12 2.8 12 2.8s-4.2 0-6.8.2C4.6 3 3.3 3 2.2 4.2 1.3 5 1 7 1 7S.7 9.3.7 11.5v2.1c0 2.2.3 4.4.3 4.4s.3 2 1.2 2.8c1.1 1.2 2.6 1.1 3.3 1.2C7.4 22.1 12 22.1 12 22.1s4.2 0 6.8-.2c.6-.1 1.9-.1 3-1.3.9-.8 1.2-2.8 1.2-2.8s.3-2.2.3-4.4v-2.1C23.3 9.3 23 7 23 7zm-13.6 8.9V8.1l8.1 3.9-8.1 3.9z" />
-                                    </svg>
-                                }
-                            />
-                            <SocialLink
-                                href="#"
-                                label="LinkedIn"
-                                icon={
-                                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
-                                        <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
-                                    </svg>
-                                }
-                            />
-                            <SocialLink
-                                href="#"
-                                label="Medium"
-                                icon={
-                                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
-                                        <path d="M13.54 12a6.8 6.8 0 0 1-6.77 6.82A6.8 6.8 0 0 1 0 12a6.8 6.8 0 0 1 6.77-6.82A6.8 6.8 0 0 1 13.54 12zm7.42 0c0 3.54-1.51 6.42-3.38 6.42-1.87 0-3.39-2.88-3.39-6.42s1.52-6.42 3.39-6.42 3.38 2.88 3.38 6.42M24 12c0 3.17-.53 5.75-1.19 5.75-.66 0-1.19-2.58-1.19-5.75s.53-5.75 1.19-5.75C23.47 6.25 24 8.83 24 12z" />
-                                    </svg>
-                                }
-                            />
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* ── EduMate product spotlight ────────────────────────────────── */}
-            <section className="bg-gray-900 text-white">
-                <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-                    <div className="grid lg:grid-cols-2 gap-16 items-center">
-                        <div>
-                            <span className="inline-flex items-center gap-2 text-xs font-bold tracking-widest uppercase text-gray-400 mb-5 border border-gray-700 px-3 py-1.5 rounded-full">
-                                First Product
-                            </span>
-                            <h2 className="text-4xl sm:text-5xl font-black tracking-tight leading-tight">
-                                Introducing{" "}
-                                <span className="text-white underline decoration-gray-600 underline-offset-4">
-                                    EduMate
-                                </span>
-                            </h2>
-                            <p className="mt-5 text-gray-400 leading-relaxed text-lg">
-                                An LMS that brings teachers, students, schools, and institutions together in one
-                                seamless digital environment.
-                            </p>
-                            <p className="mt-4 text-gray-400 leading-relaxed">
-                                Create public or private modules, build school channels, restrict or open
-                                course access — EduMate gives educators total control while keeping the
-                                learning experience clean and intuitive for students.
-                            </p>
-                            <a
-                                href="#"
-                                className="mt-8 inline-flex items-center gap-2 bg-white text-gray-900 font-bold text-sm px-6 py-3 rounded-xl hover:bg-gray-100 transition-colors"
-                            >
-                                Explore EduMate
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                                </svg>
-                            </a>
-                        </div>
-
-                        {/* feature pills */}
-                        <div className="flex flex-wrap gap-3">
-                            {features.map((f) => (
-                                <span
-                                    key={f.label}
-                                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-gray-700 bg-gray-800 text-gray-300 text-sm font-medium hover:border-gray-400 hover:text-white transition-all duration-200"
-                                >
-                                    <span>{f.icon}</span> {f.label}
-                                </span>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* ── Mission & Vision ────────────────────────────────────────── */}
-            <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-                <div className="grid sm:grid-cols-2 gap-8">
-                    {/* Vision */}
-                    <div className="group rounded-3xl border border-gray-100 bg-white p-8 sm:p-10 hover:border-gray-900 hover:shadow-xl transition-all duration-300">
-                        <div className="w-12 h-12 rounded-2xl bg-gray-900 flex items-center justify-center mb-6">
-                            <span className="text-2xl">🔭</span>
-                        </div>
-                        <h3 className="text-xl font-black text-gray-900 mb-3">Our Vision</h3>
-                        <p className="text-gray-500 leading-relaxed">
-                            To make digital education more accessible, organised, and collaborative by providing a
-                            flexible platform for teachers, students, schools, and educational institutions — no
-                            matter where they are.
-                        </p>
-                    </div>
-
-                    {/* Mission */}
-                    <div className="group rounded-3xl border border-gray-100 bg-white p-8 sm:p-10 hover:border-gray-900 hover:shadow-xl transition-all duration-300">
-                        <div className="w-12 h-12 rounded-2xl bg-gray-900 flex items-center justify-center mb-6">
-                            <span className="text-2xl">🚀</span>
-                        </div>
-                        <h3 className="text-xl font-black text-gray-900 mb-3">Our Mission</h3>
-                        <p className="text-gray-500 leading-relaxed">
-                            To develop innovative educational technology solutions that improve teaching, learning,
-                            and collaboration in modern education — and to share every lesson learned along the way
-                            with the developer community.
-                        </p>
-                    </div>
-                </div>
-            </section>
-
-            {/* ── Timeline ────────────────────────────────────────────────── */}
-            <section className="bg-gray-50 border-t border-gray-100">
-                <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-                    <h2 className="text-3xl sm:text-4xl font-black text-gray-900 mb-14 tracking-tight">
-                        Our journey so far
+            {/* ── Platform Structure ────────────────────────────────────────────── */}
+            <section className="max-w-5xl mx-auto px-6 py-24">
+                <div className="text-center mb-14">
+                    <span className="text-xs font-bold uppercase tracking-widest text-blue-600">
+                        Platform Structure
+                    </span>
+                    <h2 className="mt-3 text-4xl font-extrabold text-slate-900">
+                        Everything stacks neatly
                     </h2>
-                    <div className="max-w-xl">
-                        <TimelineItem
-                            year="2024"
-                            title="Baniya's Code Universe founded"
-                            desc="Sahan Hansaja launches the company as an independent software development initiative focused on modern web applications and educational platforms."
-                        />
-                        <TimelineItem
-                            year="2024 – 2025"
-                            title="EduMate enters development"
-                            desc="Work begins on EduMate, a full-featured LMS designed to unify teachers, students, and institutions in a single digital environment."
-                        />
-                        <TimelineItem
-                            year="2025"
-                            title="Community & content presence"
-                            desc="YouTube tutorials, LinkedIn company page, and Medium technical blog go live — sharing progress and knowledge with the developer community."
-                            last
-                        />
-                    </div>
+                    <p className="mt-3 text-slate-500 max-w-xl mx-auto">
+                        EduMate's hierarchy keeps content organised and access controlled at
+                        every layer.
+                    </p>
                 </div>
-            </section>
 
-            {/* ── CTA ─────────────────────────────────────────────────────── */}
-            <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-24 text-center">
-                <h2 className="text-3xl sm:text-4xl font-black text-gray-900 tracking-tight">
-                    Want to connect or collaborate?
-                </h2>
-                <p className="mt-4 text-gray-500 text-lg max-w-xl mx-auto">
-                    Whether you have feedback on EduMate, a collaboration idea, or just want to say hi —
-                    I&apos;d love to hear from you.
-                </p>
-                <a
-                    href="mailto:hansajasahan50@gmail.com"
-                    className="mt-8 inline-flex items-center gap-2 bg-gray-900 text-white font-bold text-sm px-8 py-4 rounded-2xl hover:bg-gray-700 transition-colors shadow-lg"
-                >
-                    Get in touch
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                    </svg>
-                </a>
-            </section>
-
-            {/* ── Footer ──────────────────────────────────────────────────── */}
-            <footer className="border-t border-gray-100 bg-white">
-                <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-400">
-                    <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-md bg-gray-900 flex items-center justify-center">
-                            <span className="text-white text-xs font-black">B</span>
+                {/* Connected flow */}
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 flex-wrap">
+                    {platformLayers.map((layer, i) => (
+                        <div key={layer.name} className="flex items-center gap-3">
+                            <div
+                                className={`flex items-center gap-2.5 rounded-xl px-5 py-3 font-semibold text-sm shadow-sm ${layer.color}`}
+                            >
+                                {layer.icon}
+                                {layer.name}
+                            </div>
+                            {i < platformLayers.length - 1 && (
+                                <ArrowRight className="w-4 h-4 text-slate-300 hidden sm:block flex-shrink-0" />
+                            )}
                         </div>
-                        <span>Baniya&apos;s Code Universe</span>
-                    </div>
-                    <span>© {new Date().getFullYear()} Sahan Hansaja. All rights reserved.</span>
+                    ))}
                 </div>
-            </footer>
+
+                <p className="text-center text-xs text-slate-400 mt-4">
+                    Channel → Modules → Assessments → Students
+                </p>
+            </section>
+
+            {/* ── Ad Slot Placement 2: Mid Page Content Dynamic Ad ──────────────── */}
+            <AdSlot adSlotId="0987654321" />
+
+            {/* ── Features Grid ─────────────────────────────────────────────────── */}
+            <section className="bg-slate-50 border-y border-slate-100 py-24">
+                <div className="max-w-5xl mx-auto px-6">
+                    <div className="text-center mb-14">
+                        <span className="text-xs font-bold uppercase tracking-widest text-blue-600">
+                            Features
+                        </span>
+                        <h2 className="mt-3 text-4xl font-extrabold text-slate-900">
+                            Built for every role
+                        </h2>
+                    </div>
+
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {features.map((f) => (
+                            <div
+                                key={f.title}
+                                className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-md transition-shadow"
+                            >
+                                <div className="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-4">
+                                    {f.icon}
+                                </div>
+                                <h3 className="font-bold text-slate-900 mb-1.5">{f.title}</h3>
+                                <p className="text-sm text-slate-500 leading-relaxed">{f.desc}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* ── For Students ──────────────────────────────────────────────────── */}
+            <section className="max-w-5xl mx-auto px-6 py-24">
+                <div className="grid lg:grid-cols-2 gap-12 items-center">
+                    <div className="relative rounded-2xl overflow-hidden shadow-xl order-2 lg:order-1">
+                        <Image
+                            src="https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=800&q=80"
+                            alt="A student studying independently on a laptop in a bright café, representing EduMate's self-paced and free learning experience for students"
+                            width={800}
+                            height={560}
+                            className="w-full h-72 lg:h-96 object-cover"
+                            unoptimized
+                        />
+                    </div>
+
+                    <div className="order-1 lg:order-2">
+                        <div className="inline-flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-2 mb-4">
+                            <GraduationCap className="w-5 h-5 text-emerald-600" />
+                            <span className="text-xs font-bold uppercase tracking-widest text-emerald-600">
+                                For Students
+                            </span>
+                        </div>
+                        <h2 className="text-4xl font-extrabold text-slate-900 leading-tight mb-4">
+                            Always free. <br /> Always yours.
+                        </h2>
+                        <p className="text-slate-500 leading-relaxed mb-5">
+                            EduMate is completely free for learners. Enrol in any public
+                            module instantly, or join a channel your institution has invited
+                            you to — and track every bit of your progress along the way.
+                        </p>
+                        <ul className="space-y-2.5">
+                            {[
+                                "Enrol in public modules freely",
+                                "Track quiz scores & submissions",
+                                "Access institution-assigned content",
+                                "Learn at your own pace",
+                            ].map((b) => (
+                                <li key={b} className="flex items-center gap-2.5 text-sm text-slate-700 font-medium">
+                                    <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                                    {b}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            {/* ── Dynamic Intake Form ────────────────────────────────────────── */}
+            <section id="join-form" className="bg-slate-50 border-y border-slate-100 py-24 px-6">
+                <div className="max-w-3xl mx-auto">
+                    <div className="text-center mb-10">
+                        <span className="text-xs font-bold uppercase tracking-widest text-blue-600">
+                            Get Started
+                        </span>
+                        <h2 className="mt-3 text-4xl font-extrabold text-slate-900">
+                            Join the EduMate ecosystem
+                        </h2>
+                        <p className="mt-2 text-slate-500">
+                            Submit your details below to get personalized access configurations.
+                        </p>
+                    </div>
+
+                    <div className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-10 shadow-sm">
+                        {isSubmitted ? (
+                            <div className="text-center py-10 space-y-4">
+                                <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto shadow-sm">
+                                    <CheckCircle className="w-7 h-7" />
+                                </div>
+                                <h3 className="text-2xl font-bold text-slate-900">Details Received!</h3>
+                                <p className="text-slate-500 max-w-md mx-auto text-sm">
+                                    Thank you for registering interest. Our platform team will evaluate your onboarding configuration profile shortly.
+                                </p>
+                                <button
+                                    onClick={() => setIsSubmitted(false)}
+                                    className="text-sm font-semibold text-blue-600 hover:text-blue-700 underline pt-2"
+                                >
+                                    Submit another response
+                                </button>
+                            </div>
+                        ) : (
+                            <form onSubmit={handleFormSubmit} className="space-y-6">
+                                {/* Role Custom Toggle Switch */}
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
+                                        Registering as a:
+                                    </label>
+                                    <div className="grid grid-cols-2 gap-2 bg-slate-100 p-1.5 rounded-xl border border-slate-200/60">
+                                        <button
+                                            type="button"
+                                            onClick={() => setRole("teacher")}
+                                            className={`flex items-center justify-center gap-2 py-3 text-sm font-semibold rounded-lg transition-all ${role === "teacher" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-800"}`}
+                                        >
+                                            <Building2 className="w-4 h-4" /> Institution / Teacher
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setRole("student")}
+                                            className={`flex items-center justify-center gap-2 py-3 text-sm font-semibold rounded-lg transition-all ${role === "student" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-800"}`}
+                                        >
+                                            <GraduationCap className="w-4 h-4" /> Student / Learner
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* General Fields */}
+                                <div className="grid sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-semibold text-slate-700 mb-1.5">Full Name</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={formData.name}
+                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                            placeholder="e.g. Professor Sahan"
+                                            className="w-full rounded-xl border border-slate-200 p-3 text-sm focus:outline-none focus:border-blue-600 bg-slate-50/50"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-semibold text-slate-700 mb-1.5">Email Address</label>
+                                        <input
+                                            type="email"
+                                            required
+                                            value={formData.email}
+                                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                            placeholder="name@domain.com"
+                                            className="w-full rounded-xl border border-slate-200 p-3 text-sm focus:outline-none focus:border-blue-600 bg-slate-50/50"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Dynamic Fields depending on Role selection */}
+                                {role === "teacher" && (
+                                    <div>
+                                        <label className="block text-xs font-semibold text-slate-700 mb-1.5">School / Academy name</label>
+                                        <input
+                                            type="text"
+                                            required={role === "teacher"}
+                                            value={formData.organization}
+                                            onChange={(e) => setFormData({ ...formData, organization: e.target.value })}
+                                            placeholder="e.g. Global Educational Institute"
+                                            className="w-full rounded-xl border border-slate-200 p-3 text-sm focus:outline-none focus:border-blue-600 bg-slate-50/50"
+                                        />
+                                    </div>
+                                )}
+
+                                <div>
+                                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                                        {role === "teacher" ? "What modules or classes do you plan to host?" : "What areas of study are you looking to explore?"}
+                                    </label>
+                                    <textarea
+                                        rows={3}
+                                        value={formData.interest}
+                                        onChange={(e) => setFormData({ ...formData, interest: e.target.value })}
+                                        placeholder={role === "teacher" ? "Briefly explain course structures or private channel goals..." : "e.g. Distributed architectures, self-paced programming modules..."}
+                                        className="w-full rounded-xl border border-slate-200 p-3 text-sm focus:outline-none focus:border-blue-600 bg-slate-50/50 resize-none"
+                                    />
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    className="w-full bg-blue-600 text-white rounded-xl py-3.5 text-sm font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-md shadow-blue-100"
+                                >
+                                    Submit Application <Send className="w-4 h-4" />
+                                </button>
+                            </form>
+                        )}
+                    </div>
+                </div>
+            </section>
+
+            {/* ── About Baniya Technologies ─────────────────────────────────────── */}
+            <section className="bg-slate-900 text-white py-24">
+                <div className="max-w-5xl mx-auto px-6">
+                    <div className="grid lg:grid-cols-2 gap-12 items-center">
+                        <div>
+                            <span className="text-xs font-bold uppercase tracking-widest text-blue-400">
+                                About the maker
+                            </span>
+                            <h2 className="mt-3 text-4xl font-extrabold leading-tight mb-5">
+                                Baniya Technologies
+                            </h2>
+                            <p className="text-slate-400 leading-relaxed mb-4">
+                                We are a software development company focused on building modern
+                                digital solutions for education, productivity, and intelligent
+                                systems. EduMate is our flagship product — built to transform
+                                how education is delivered and managed in the digital era.
+                            </p>
+                            <p className="text-slate-400 leading-relaxed">
+                                Our vision is a global learning ecosystem where education is
+                                accessible, organised, interactive, and scalable for every
+                                learner and institution on the planet.
+                            </p>
+
+                            <div className="mt-8 flex flex-wrap gap-3">
+                                {["Accessible 🌍", "Organised 📚", "Interactive 🧠", "Scalable 🚀"].map(
+                                    (tag) => (
+                                        <span
+                                            key={tag}
+                                            className="rounded-full border border-slate-700 bg-slate-800 px-4 py-1.5 text-sm text-slate-300"
+                                        >
+                                            {tag}
+                                        </span>
+                                    )
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="relative rounded-2xl overflow-hidden shadow-2xl">
+                            <img
+                                src="https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&q=80"
+                                alt="A software developer working on code for a modern application, representing the Baniya Technologies team building EduMate"
+                                width={800}
+                                height={560}
+                                className="w-full h-72 lg:h-80 object-cover opacity-90"
+                            />
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* ── CTA ───────────────────────────────────────────────────────────── */}
+            <section className="py-24 px-6 text-center bg-white">
+                <div className="max-w-2xl mx-auto">
+                    <h2 className="text-4xl sm:text-5xl font-extrabold text-slate-900 mb-4">
+                        Ready to transform your classroom?
+                    </h2>
+                    <p className="text-slate-500 mb-10 leading-relaxed">
+                        Join institutions and learners already using EduMate to build better
+                        educational experiences.
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                        <a
+                            href="#join-form"
+                            className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-8 py-4 text-sm font-semibold text-white shadow-lg shadow-blue-200 hover:bg-blue-700 transition-colors"
+                        >
+                            Get started for free <ArrowRight className="w-4 h-4" />
+                        </a>
+                        <a
+                            href="#join-form"
+                            className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-8 py-4 text-sm font-semibold text-slate-700 hover:border-slate-300 transition-colors"
+                        >
+                            Contact us
+                        </a>
+                    </div>
+                </div>
+            </section>
+
         </main>
     );
 }

@@ -6,6 +6,8 @@ import { useEffect, useState, Suspense } from "react";
 import { API_BASE_URL } from "@/app/config/api";
 import { getUser } from "@/app/services/authService";
 
+// Assuming this helper utility can be imported here if defined elsewhere:
+// import { getUser } from "@/app/utils/auth";
 
 function ScorePageContent() {
     const searchParams = useSearchParams();
@@ -14,9 +16,10 @@ function ScorePageContent() {
     const assignmentId = searchParams.get("assignment_id");
     const studentId = searchParams.get("student_id");
 
+    // 1. Setup user authentication state tracker
     const [user, setUser] = useState<any>(null);
-    const [isVerifying, setIsVerifying] = useState(true); // Core security gate state
-    const [loading, setLoading] = useState(false);
+
+    const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [submission, setSubmission] = useState<any>(null);
     const [error, setError] = useState<string | null>(null);
@@ -25,90 +28,77 @@ function ScorePageContent() {
     const [isPdf, setIsPdf] = useState(false);
     const [fileName, setFileName] = useState("submission_document");
 
-    // Construct the backend file link directly
     const directFileUrl = submission ? `${API_BASE_URL}/submissions/file/${submission.id}` : null;
 
-    // 1. Fetch current logged-in user on component mount
+    // 2. Pull user on mount stage
     useEffect(() => {
-        const currentUser = getUser();
-        setUser(currentUser);
+        if (typeof window !== "undefined") {
+            const currentUser = getUser();
+            setUser(currentUser);
+        }
     }, []);
 
-    // 2. Perform the Module Access Security Check
+    // 3. Combined execution for validating access and then resolving student record assets
     useEffect(() => {
-        const verifyAccessAndFetch = async () => {
-            if (!assignmentId || !user) return;
+        if (!assignmentId || !studentId || !user?.id) return;
 
+        const verifyAccessAndFetchData = async () => {
             try {
-                // FastAPI Form(...) parsing requires form-url-encoded search params payload
-                const formData = new URLSearchParams();
-                formData.append("assignment_id", assignmentId);
-                formData.append("current_user_id", String(user.id || user.user_id));
+                setLoading(true);
+                setError(null);
 
-                const authRes = await fetch(`${API_BASE_URL}/module-access/check`, {
+                // A. Run access verification check against the backend endpoint first
+                const accessFormData = new URLSearchParams();
+                accessFormData.append("assignment_id", assignmentId);
+                accessFormData.append("current_user_id", user.id.toString());
+
+                const authRes = await fetch(`${API_BASE_URL}/assignment-access/check`, {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/x-www-form-urlencoded",
                     },
-                    body: formData,
+                    body: accessFormData,
                 });
 
-                // Redirect to authorization error page if access is denied
-                if (authRes.status === 403 || authRes.status === 401) {
+                // Immediately boot out or bounce unauthorized instructors
+                if (authRes.status === 403) {
                     router.push("/errors/autharization");
                     return;
                 }
 
                 if (!authRes.ok) {
-                    const errData = await authRes.json().catch(() => ({}));
-                    throw new Error(errData?.detail || "Module verification failure.");
+                    const authErrData = await authRes.json().catch(() => ({}));
+                    throw new Error(authErrData?.detail || `Verification status issue: ${authRes.status}`);
                 }
 
-                // If authorized, drop the safety gate and immediately pull sub metadata
-                setIsVerifying(false);
-                if (studentId) {
-                    fetchSubmissionMetadata();
+                // B. Authorization confirmed, fetch submission metadata
+                const metaRes = await fetch(
+                    `${API_BASE_URL}/submissions/assignment/${assignmentId}/student/${studentId}`
+                );
+
+                if (!metaRes.ok) {
+                    throw new Error("The specified candidate assignment record was not found.");
                 }
+
+                const data = await metaRes.json();
+                setSubmission(data);
+                setMarks(data.marks ?? "");
+
+                const inferredName = data.fileName || data.filename || "Submission_Asset";
+                setFileName(inferredName);
+
+                const extension = inferredName.split(".").pop()?.toLowerCase() || "";
+                setIsPdf(extension === "pdf");
 
             } catch (err: any) {
-                setError(err.message);
-                setIsVerifying(false);
+                setError(err.message || "An unexpected integration failure occurred.");
+            } finally {
+                setLoading(false);
             }
         };
 
-        verifyAccessAndFetch();
+        verifyAccessAndFetchData();
     }, [assignmentId, studentId, user]);
-
-    // 3. Isolated internal logic to retrieve submission asset parameters
-    const fetchSubmissionMetadata = async () => {
-        try {
-            setLoading(true);
-            setError(null);
-
-            const metaRes = await fetch(
-                `${API_BASE_URL}/submissions/assignment/${assignmentId}/student/${studentId}`
-            );
-
-            if (!metaRes.ok) {
-                throw new Error("The specified candidate assignment record was not found.");
-            }
-
-            const data = await metaRes.json();
-            setSubmission(data);
-            setMarks(data.marks ?? "");
-
-            const inferredName = data.fileName || data.filename || "Submission_Asset";
-            setFileName(inferredName);
-
-            const extension = inferredName.split(".").pop()?.toLowerCase() || "";
-            setIsPdf(extension === "pdf");
-
-        } catch (err: any) {
-            setError(err.message || "An unexpected integration failure occurred.");
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const handleSaveGrade = async () => {
         if (!submission) return;
@@ -125,7 +115,7 @@ function ScorePageContent() {
                 `${API_BASE_URL}/submissions/grade/${submission.id}`,
                 {
                     method: "PUT",
-                    body: formData, // Browser generates multipart boundary dynamically
+                    body: formData,
                 }
             );
 
@@ -141,19 +131,7 @@ function ScorePageContent() {
         }
     };
 
-    // Show spinner during security check
-    if (isVerifying) {
-        return (
-            <div className="min-h-screen bg-white p-6 flex flex-col items-center justify-center">
-                <div className="flex flex-col items-center gap-2">
-                    <Loader2 className="w-8 h-8 animate-spin text-gray-900" />
-                    <p className="text-sm text-gray-500 font-medium">Verifying Faculty Module Permissions...</p>
-                </div>
-            </div>
-        );
-    }
 
-    // Show skeleton layout loader when building payload parameters
     if (loading) {
         return (
             <div className="min-h-screen bg-white p-6 flex flex-col items-center justify-center">

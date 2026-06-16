@@ -26,15 +26,31 @@ export default function CreateModule() {
 
   // Example skills for autocomplete
   const availableSkills = [
-    "English",
-    "Tamil",
-    "Math",
-    "Science",
-    "IT",
-    "Technology",
-    "Physics",
-    "Chemistry",
-    "Biology",
+    // Original core subjects
+    "English", "Tamil", "Math", "Science", "IT", "Technology", "Physics", "Chemistry", "Biology",
+
+    // Advanced Tech & Engineering
+    "Computer Science", "Software Engineering", "Artificial Intelligence", "Machine Learning",
+    "Data Science", "Cybersecurity", "Cloud Computing", "Web Development", "Mobile Development",
+    "UI/UX Design", "Robotics", "Hardware Engineering",
+
+    // Business & Professional Development
+    "Business Studies", "Economics", "Accounting", "Finance", "Digital Marketing",
+    "Project Management", "Entrepreneurship", "Leadership", "Data Analytics", "Public Speaking",
+
+    // Humanities & Social Sciences
+    "History", "Geography", "Political Science", "Sociology", "Psychology",
+    "Philosophy", "Literature", "Media Studies",
+
+    // Creative Arts & Design
+    "Graphic Design", "Fine Arts", "Photography", "Video Editing", "Music Production",
+    "Animation", "Creative Writing",
+
+    // Languages & Communication
+    "Sinhala", "French", "German", "Spanish", "Mandarin", "Japanese", "Linguistics",
+
+    // Soft Skills & Essential Growth
+    "Critical Thinking", "Problem Solving", "Time Management", "Financial Literacy", "Emotional Intelligence"
   ];
 
   // Add a skill

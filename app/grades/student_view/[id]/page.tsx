@@ -10,97 +10,126 @@ type User = {
     email: string;
 };
 
-type Grade = {
-    quiz_id: number;
-    quiz_title: string;
-
-    obtained_marks: number;
-    total_marks: number;
-    percentage: number;
-
-    attempt_number: number;
-    status: string;
+type ScoreResponse = {
+    student_id: number;
+    module_id: number;
+    summary: any;
+    quizzes: any[];
+    assignments: any[];
 };
 
 export default function Page() {
     const params = useParams();
-    const id = params.id as string;
+    const moduleId = params.id as string;
 
     const [user, setUser] = useState<User | null>(null);
-    const [grades, setGrades] = useState<Grade[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [data, setData] = useState<ScoreResponse | null>(null);
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        const currentUser = getUser();
-        setUser(currentUser);
+        setUser(getUser());
     }, []);
 
     useEffect(() => {
-        if (!user) return;
+        const fetchData = async () => {
+            if (!user?.id || !moduleId) return;
 
-        const fetchGrades = async () => {
+            setLoading(true);
+
             try {
-                setLoading(true);
-
                 const res = await fetch(
-                    `${API_BASE_URL}/grades/user/${user.id}/module/${id}`
+                    `${API_BASE_URL}/student-score/${user.id}/${moduleId}`
                 );
-
-                if (!res.ok) {
-                    throw new Error("Failed to fetch grades");
-                }
-
-                const data = await res.json();
-                setGrades(data.results || []);
-            } catch (error) {
-                console.error(error);
-                setGrades([]);
+                const result = await res.json();
+                setData(result);
+            } catch (err) {
+                console.error(err);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchGrades();
-    }, [user, id]);
+        fetchData();
+    }, [user, moduleId]);
+
+    const quizzes = data?.quizzes ?? [];
+    const assignments = data?.assignments ?? [];
+    const summary = data?.summary;
 
     return (
         <div className="p-6">
+
             <h1 className="text-xl font-bold mb-4">
-                Module ID: {id} - Grade Dashboard
+                Module Gradebook
             </h1>
 
-            {loading ? (
-                <p>Loading...</p>
-            ) : grades.length === 0 ? (
-                <p>No grades found</p>
-            ) : (
-                <div className="overflow-x-auto">
-                    <table className="w-full border border-gray-300">
-                        <thead className="bg-gray-100">
-                            <tr>
-                                <th className="border p-2">Quiz Name</th>
-                                <th className="border p-2">Score</th>
-                                <th className="border p-2">Percentage</th>
-                            </tr>
-                        </thead>
-
-                                <tbody>
-                                    {grades.map((g) => (
-                                        <tr key={g.quiz_id} className="text-center">
-                                            <td className="border p-2">{g.quiz_title}</td>
-
-                                            <td className="border p-2">{g.total_marks}</td>
-
-                                            <td className="border p-2">
-                                                {g.percentage ? `${g.percentage}%` : "-"}
-                                            </td>
-
-                                            <td className="border p-2">{g.status}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                    </table>
+            {/* SUMMARY */}
+            {summary && (
+                <div className="bg-gray-100 p-4 rounded mb-6">
+                    <p className="font-semibold">Overall: {summary.overall_percentage}%</p>
+                    <p>Total: {summary.total_obtained} / {summary.total_marks}</p>
                 </div>
+            )}
+
+            {/* TABLE */}
+            <div className="overflow-x-auto">
+                <table className="w-full border border-gray-300 text-sm">
+
+                    <thead className="bg-gray-200">
+                        <tr>
+                            <th className="p-2 border">Type</th>
+                            <th className="p-2 border">Title</th>
+                            <th className="p-2 border">Marks</th>
+                            <th className="p-2 border">Obtained</th>
+                            <th className="p-2 border">Percentage</th>
+                            <th className="p-2 border">Status / Feedback</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {/* QUIZZES */}
+                        {quizzes.map((q, i) => (
+                            <tr key={`quiz-${i}`} className="text-center">
+                                <td className="border p-2">Quiz</td>
+                                <td className="border p-2">
+                                    {q.title || `Quiz #${q.quiz_id}`}
+                                </td>
+                                <td className="border p-2">{q.total_marks}</td>
+                                <td className="border p-2">{q.obtained_marks}</td>
+                                <td className="border p-2">{q.percentage}%</td>
+                                <td className="border p-2">{q.status}</td>
+                            </tr>
+                        ))}
+
+                        {/* ASSIGNMENTS */}
+                        {assignments.map((a, i) => (
+                            <tr key={`assign-${i}`} className="text-center">
+                                <td className="border p-2">Assignment</td>
+                                <td className="border p-2">
+                                    {a.title || `Assignment #${a.assignment_id}`}
+                                </td>
+                                <td className="border p-2">{a.full_marks}</td>
+                                <td className="border p-2">{a.marks}</td>
+                                <td className="border p-2">
+                                    {a.full_marks
+                                        ? Math.round((a.marks / a.full_marks) * 100)
+                                        : 0}
+                                    %
+                                </td>
+                                <td className="border p-2">
+                                    {a.feedback || "No feedback"}
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* EMPTY STATE */}
+            {!loading && quizzes.length === 0 && assignments.length === 0 && (
+                <p className="text-gray-500 mt-4">
+                    No records found for this module.
+                </p>
             )}
         </div>
     );
