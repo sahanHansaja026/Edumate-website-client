@@ -1,4 +1,4 @@
-name: Deploy Next.js to EC2 via Docker Hub
+name: Deploy Next.js to EC2
 
 on:
   push:
@@ -6,42 +6,25 @@ on:
       - main
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # 📥 Checkout repo
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      # 🔐 Login Docker Hub
-      - name: Login to Docker Hub
-        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-
-      # 🐳 Build Docker image (ROOT FIX)
-      - name: Build Docker image
-        run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/nextjs-app:latest .
-
-      # 📤 Push image
-      - name: Push Docker image
-        run: |
-          docker push ${{ secrets.DOCKER_USERNAME }}/nextjs-app:latest
-
-      # 🚀 Deploy to EC2
-      - name: Deploy on EC2
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_KEY }}
+          key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            docker pull ${{ secrets.DOCKER_USERNAME }}/nextjs-app:latest
+            cd ~/Edumate-website-client
 
-            docker stop nextjs-app || true
-            docker rm nextjs-app || true
+            git pull origin main
 
-            docker run -d \
-              --name nextjs-app \
-              -p 3000:3000 \
-              ${{ secrets.DOCKER_USERNAME }}/nextjs-app:latest
+            npm install
+
+            npm run build
+
+            pm2 restart edumate || pm2 start npm --name edumate -- start
+
+            pm2 save
