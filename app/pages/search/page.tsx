@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { Search, X, Compass, Tag, Layers, User, ExternalLink, SlidersHorizontal } from "lucide-react";
 import { API_BASE_URL } from "@/app/config/api";
+// 1. Import the Link component from Next.js
+import Link from "next/link";
 
 interface Owner {
     email: string;
@@ -50,7 +52,6 @@ export default function ModuleSearchPage() {
                 setModules(list);
 
                 // Populate initial tags only if they haven't been loaded yet 
-                // to prevent sidebar filters from disappearing during filtering
                 if (allTags.length === 0 && list.length > 0) {
                     const tags = new Set<string>();
                     list.forEach((m: Module) => {
@@ -70,9 +71,6 @@ export default function ModuleSearchPage() {
         return () => clearTimeout(timer);
     }, [searchQuery, selectedTags, allTags.length]);
 
-    // -----------------------------
-    // TOGGLE TAG CHECKBOX
-    // -----------------------------
     const toggleTag = (tag: string) => {
         setSelectedTags(prev =>
             prev.includes(tag)
@@ -117,7 +115,7 @@ export default function ModuleSearchPage() {
                         </div>
                     </div>
 
-                    {/* MOBILE TAGS ROLL (Visible only on mobile/tablet) */}
+                    {/* MOBILE TAGS ROLL */}
                     {allTags.length > 0 && (
                         <div className="flex md:hidden items-center gap-2 overflow-x-auto pt-3 pb-1 no-scrollbar mask-image">
                             <span className="text-xs font-medium text-zinc-400 flex items-center gap-1 shrink-0">
@@ -130,8 +128,8 @@ export default function ModuleSearchPage() {
                                         key={tag}
                                         onClick={() => toggleTag(tag)}
                                         className={`text-xs px-2.5 py-1 rounded-full border transition shrink-0 ${isSelected
-                                                ? "bg-zinc-900 border-zinc-900 text-white"
-                                                : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300"
+                                            ? "bg-zinc-900 border-zinc-900 text-white"
+                                            : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300"
                                             }`}
                                     >
                                         {tag}
@@ -146,7 +144,7 @@ export default function ModuleSearchPage() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="flex gap-8 items-start">
 
-                    {/* ================= DESKTOP SIDEBAR ================= */}
+                    {/* DESKTOP SIDEBAR */}
                     <aside className="w-60 shrink-0 hidden md:block sticky top-24">
                         <div className="flex items-center justify-between mb-4 pb-2 border-b border-zinc-100">
                             <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
@@ -189,7 +187,7 @@ export default function ModuleSearchPage() {
                         </div>
                     </aside>
 
-                    {/* ================= MAIN CONTENT AREA ================= */}
+                    {/* MAIN CONTENT AREA */}
                     <main className="flex-1 min-w-0">
                         {loading ? (
                             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -223,16 +221,18 @@ export default function ModuleSearchPage() {
                         ) : (
                             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {modules.map((m) => (
-                                    <div
+                                    // 2. Changed <div> to NextJS <Link> and added the href attribute
+                                    <Link
                                         key={`${m.type}-${m.module_id}`}
-                                        className="group relative flex flex-col justify-between p-5 bg-white border border-zinc-200 hover:border-zinc-400 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.03)] transition-all duration-200"
+                                        href={`/enrolle/${m.module_id}`}
+                                        className="group relative flex flex-col justify-between p-5 bg-white border border-zinc-200 hover:border-zinc-400 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.03)] transition-all duration-200 cursor-pointer"
                                     >
                                         <div>
                                             {/* TYPE ICON & UPPER ROW */}
                                             <div className="flex items-center justify-between gap-2 mb-3">
                                                 <span className={`inline-flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md ${m.type === "channel_module"
-                                                        ? "bg-zinc-100 text-zinc-800"
-                                                        : "bg-zinc-50 text-zinc-600 border border-zinc-200/60"
+                                                    ? "bg-zinc-100 text-zinc-800"
+                                                    : "bg-zinc-50 text-zinc-600 border border-zinc-200/60"
                                                     }`}>
                                                     <Layers size={10} />
                                                     {m.type === "channel_module" ? "Channel" : "Standard"}
@@ -284,7 +284,7 @@ export default function ModuleSearchPage() {
                                                 )}
                                             </div>
                                         )}
-                                    </div>
+                                    </Link>
                                 ))}
                             </div>
                         )}
