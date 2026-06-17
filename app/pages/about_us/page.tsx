@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 
 // ─── REPLACE WITH YOUR ADSENSE CLIENT ID ─────────────────────────────────────
-const ADSENSE_CLIENT_ID = "ca-pub-XXXXXXXXXXXXXXXX";
+const ADSENSE_CLIENT_ID = "ca-pub-8692974786168817";
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
