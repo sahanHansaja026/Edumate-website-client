@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { useState, useEffect, Suspense } from "react";
+import { useState, Suspense } from "react";
 import { API_BASE_URL } from "@/app/config/api";
 
 function SubmitPlaneForm() {
@@ -22,7 +22,7 @@ function SubmitPlaneForm() {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [showAgreement, setShowAgreement] = useState(true);
-    const [lang, setLang] = useState<"en" | "si">("en"); // <-- Add this state line
+    const [lang, setLang] = useState<"en" | "si">("en");
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -83,32 +83,32 @@ function SubmitPlaneForm() {
     };
 
     const getPlanBadgeStyles = () => {
-        if (planType === "edu") return "bg-emerald-500/10 text-emerald-500 border-emerald-500/20";
-        if (planType === "premium") return "bg-indigo-500/10 text-indigo-500 border-indigo-500/20";
-        return "bg-slate-500/10 text-slate-500 border-slate-500/20";
+        if (planType === "edu") return "bg-emerald-50 text-emerald-700 border-emerald-200";
+        if (planType === "premium") return "bg-indigo-50 text-indigo-700 border-indigo-200";
+        return "bg-slate-100 text-slate-700 border-slate-200";
     };
 
     return (
-        <div className="min-h-screen bg-slate-900 text-slate-100 flex items-center justify-center p-4 md:p-8 font-sans relative overflow-hidden">
+        <div className="min-h-screen bg-slate-50 text-slate-800 flex items-center justify-center p-4 md:p-8 font-sans relative overflow-hidden">
 
             {/* CENTERED POPUP WINDOW / AGREEMENT MODAL */}
             {showAgreement && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-                    <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-2xl space-y-5 text-center animate-in fade-in zoom-in-95 duration-200">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+                    <div className="w-full max-w-lg bg-white border border-slate-200 rounded-2xl p-6 md:p-8 shadow-2xl space-y-5 text-center animate-in fade-in zoom-in-95 duration-200">
 
                         {/* LANGUAGE SELECTOR */}
-                        <div className="flex justify-end gap-2 text-xs border-b border-slate-800 pb-3">
+                        <div className="flex justify-end gap-2 text-xs border-b border-slate-100 pb-3">
                             <button
                                 type="button"
                                 onClick={() => setLang("en")}
-                                className={`px-2.5 py-1 rounded md:transition-colors ${lang === "en" ? "bg-indigo-600 text-white font-bold" : "bg-slate-800 text-slate-400 hover:text-slate-200"}`}
+                                className={`px-2.5 py-1 rounded transition-colors ${lang === "en" ? "bg-indigo-600 text-white font-semibold" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
                             >
                                 English
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setLang("si")}
-                                className={`px-2.5 py-1 rounded md:transition-colors ${lang === "si" ? "bg-indigo-600 text-white font-bold" : "bg-slate-800 text-slate-400 hover:text-slate-200"}`}
+                                className={`px-2.5 py-1 rounded transition-colors ${lang === "si" ? "bg-indigo-600 text-white font-semibold" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
                             >
                                 සිංහල
                             </button>
@@ -116,70 +116,77 @@ function SubmitPlaneForm() {
 
                         {/* WARNING HEADER */}
                         <div className="space-y-1">
-                            <div className="w-11 h-11 rounded-full bg-rose-500/10 text-rose-500 flex items-center justify-center text-xl mx-auto mb-1">
+                            <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center text-xl mx-auto mb-2 border border-rose-100">
                                 ⚠️
                             </div>
-                            <h2 className="text-lg font-black tracking-tight text-rose-500 uppercase">
-                                {lang === "en" ? "Important Notice & Agreement" : "වැදගත් දැනුම්දීම සහ එකඟතාවය"}
+                            <h2 className="text-xl font-bold tracking-tight text-slate-900 uppercase">
+                                {lang === "en" ? "Important Notice & Activation" : "වැදගත් දැනුම්දීම සහ සැලසුම් සක්‍රීය කිරීම"}
                             </h2>
-                            <p className="text-[11px] text-slate-400">
-                                {lang === "en" ? "Please read carefully before submitting your receipt." : "ඔබගේ රිසිට්පත යොමු කිරීමට පෙර කරුණාකර මෙය හොඳින් කියවන්න."}
+                            <p className="text-xs text-slate-500">
+                                {lang === "en" ? "Please read the requirements completely before uploading." : "කරුණාකර ඉදිරියට යාමට පෙර සියලු උපදෙස් හොඳින් කියවන්න."}
                             </p>
                         </div>
 
-                        {/* DIRECT RESPONSIBILITY DISCLAIMER (RED TEXT BANNER) */}
-                        <div className="bg-rose-950/20 border border-rose-500/20 rounded-xl p-4 text-left space-y-1">
-                            <p className="text-xs text-rose-400 font-black uppercase tracking-wider">
-                                {lang === "en" ? "We Are Not Responsible:" : "අප වගකීමක් නොගන්නා වගයි:"}
+                        {/* BANK DETAILS & STEP-BY-STEP */}
+                        <div className="text-left bg-indigo-50/60 border border-indigo-100 rounded-xl p-4 space-y-2.5 text-xs">
+                            <p className="font-bold text-indigo-800 uppercase tracking-wider">
+                                {lang === "en" ? "How to Activate Your Plan:" : "සැලසුම සක්‍රීය කරගන්නා ආකාරය:"}
                             </p>
-                            <p className="text-xs text-rose-300 font-semibold leading-relaxed">
+                            <ol className="list-decimal list-inside space-y-1.5 text-slate-700">
+                                <li>
+                                    {lang === "en" ? <>Transfer the exact amount to Account Number: <strong className="text-indigo-700 font-mono text-sm bg-indigo-100/50 px-1 rounded">4924086</strong></> : <>නියමිත මුදල මෙම ගිණුම් අංකයට බැර කරන්න: <strong className="text-indigo-700 font-mono text-sm bg-indigo-100/50 px-1 rounded">4924086</strong></>}
+                                </li>
+                                <li>
+                                    {lang === "en" ? <>Write your account email (<span className="text-indigo-600 font-semibold">{userEmail || "your email"}</span>) on the receipt or payment reference remarks slot.</> : <>ගෙවීම් රිසිට්පත මත හෝ Transfer Remarks ලෙස ඔබගේ විද්‍යුත් තැපෑල (<span className="text-indigo-600 font-semibold">{userEmail || "ඔබගේ email ලිපිනය"}</span>) පැහැදිලිව සඳහන් කරන්න.</>}
+                                </li>
+                                <li>
+                                    {lang === "en" ? "Capture a clear digital screenshot or image of the transaction slip summary." : "සම්පූර්ණ රිසිට්පත පැහැදිලිව පෙනෙන සේ ඡායාරූපයක් හෝ Screenshot එකක් ලබාගන්න."}
+                                </li>
+                            </ol>
+                        </div>
+
+                        {/* RESPONSIBILITY DISCLAIMER */}
+                        <div className="bg-rose-50/50 border border-rose-100 rounded-xl p-4 text-left space-y-1">
+                            <p className="text-xs text-rose-800 font-bold uppercase tracking-wider">
+                                {lang === "en" ? "Liability Disclaimer:" : "වගකීම් ලිහිල් කිරීම:"}
+                            </p>
+                            <p className="text-xs text-slate-600 leading-relaxed">
                                 {lang === "en" ? (
-                                    "We are not responsible or liable for any lost money, bank transfer errors, typing mistakes, or fake/wrong receipt slips uploaded to this system. Please verify everything on your end before proceeding."
+                                    "We are not liable for any misdirected transactions, bank system connection dropouts, or typing mistakes. Double check details thoroughly before continuing."
                                 ) : (
-                                    "මුදල් අස්ථානගතවීම්, බැංකු හුවමාරු දෝෂ, වැරදි තොරතුරු ඇතුළත් කිරීම් හෝ ව්‍යාජ රිසිට්පත් යොමු කිරීම් සම්බන්ධයෙන් අප කිසිදු වගකීමක් භාර නොගන්නා බව කරුණාවෙන් සලකන්න. ඉදිරියට යාමට පෙර සියල්ල නිවැරදිදැයි පරීක්ෂා කර බලන්න."
+                                    "මුදල් අස්ථානගතවීම්, බැංකු පද්ධති දෝෂ, වැරදි තොරතුරු ඇතුළත් කිරීම් සම්බන්ධයෙන් අප කිසිදු වගකීමක් භාර නොගන්නා බව කරුණාවෙන් සලකන්න."
                                 )}
                             </p>
                         </div>
 
                         {/* TIMELINE DETAILS */}
-                        <div className="text-left bg-slate-950/40 border border-slate-800/80 rounded-xl p-4 space-y-3">
+                        <div className="text-left bg-slate-50 border border-slate-200 rounded-xl p-4">
                             <div className="flex items-start gap-3">
-                                <span className="text-indigo-400 mt-0.5 text-sm">⏳</span>
-                                <p className="text-xs text-slate-300 leading-relaxed">
-                                    <strong className="text-white">{lang === "en" ? "24-Hour Review:" : "පැය 24ක පරීක්ෂාව:"}</strong>{" "}
+                                <span className="text-indigo-600 text-base mt-0.5">⏳</span>
+                                <p className="text-xs text-slate-600 leading-relaxed">
+                                    <strong className="text-slate-900">{lang === "en" ? "Strict 6-Hour Deadline:" : "පැය 6ක කාලසීමාව:"}</strong>{" "}
                                     {lang === "en" ? (
-                                        <>Within <span className="text-indigo-400 font-bold">24 hours</span>, we will personally check if your payment request is valid or invalid.</>
+                                        <>Please submit your proof within <span className="text-rose-600 font-semibold">6 hours</span> of making the bank transfer. Verification requests processed outside this frame might see delays.</>
                                     ) : (
-                                        <>ඔබගේ ගෙවීම් රිසිට්පත නිවැරදිද නැද්ද යන්න අප <span className="text-indigo-400 font-bold">පැය 24ක් ඇතුළත</span> පරීක්ෂා කර බලනු ලැබේ.</>
-                                    )}
-                                </p>
-                            </div>
-                            <div className="flex items-start gap-3">
-                                <span className="text-indigo-400 mt-0.5 text-sm">📧</span>
-                                <p className="text-xs text-slate-300 leading-relaxed">
-                                    <strong className="text-white">{lang === "en" ? "Email & Activation:" : "විද්‍යුත් තැපෑල සහ සක්‍රීය කිරීම:"}</strong>{" "}
-                                    {lang === "en" ? (
-                                        "Once confirmed, we will send an email about your approval status and manually activate your subscription plan request."
-                                    ) : (
-                                        "එය තහවුරු වූ වහාම, අනුමැතිය ලැබුණේද නැද්ද යන තත්ත්වය පිළිබඳව ඔබට Email පණිවිඩයක් ලැබෙන අතර ඔබ ඉල්ලුම් කළ සැලසුම (Plan) සක්‍රීය කරනු ඇත."
+                                        <>මුදල් හුවමාරුව සිදුකර <span className="text-rose-600 font-semibold">පැය 6ක් ඇතුළත</span> රිසිට්පත මෙහි ඇතුලත් කරන්න.</>
                                     )}
                                 </p>
                             </div>
                         </div>
 
                         {/* ACTION BUTTONS */}
-                        <div className="pt-1 flex gap-3">
+                        <div className="pt-2 flex gap-3">
                             <button
                                 type="button"
                                 onClick={() => router.back()}
-                                className="w-1/3 py-2 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-lg text-xs transition-colors"
+                                className="w-1/3 py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition-colors"
                             >
                                 {lang === "en" ? "Cancel" : "අවලංගු කරන්න"}
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setShowAgreement(false)}
-                                className="w-2/3 py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-xs shadow-lg shadow-indigo-600/20 transition-colors"
+                                className="w-2/3 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-xs shadow-lg shadow-indigo-600/10 transition-colors"
                             >
                                 {lang === "en" ? "I Understand & Agree" : "මම කියවා තේරුම් ගතිමි"}
                             </button>
@@ -189,67 +196,100 @@ function SubmitPlaneForm() {
                 </div>
             )}
 
-            {/* MAIN SYSTEM CONTAINER PANEL (Blurred slightly if modal is active) */}
-            <div className={`w-full max-w-5xl bg-slate-950/40 backdrop-blur-md rounded-2xl border border-slate-800 shadow-2xl overflow-hidden grid md:grid-cols-12 transition-all duration-300 ${showAgreement ? 'blur-sm pointer-events-none scale-[0.99]' : ''}`}>
+            {/* MAIN SYSTEM CONTAINER PANEL */}
+            <div className={`w-full max-w-5xl bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden grid grid-cols-1 md:grid-cols-12 transition-all duration-300 ${showAgreement ? 'blur-sm pointer-events-none scale-[0.99] opacity-40' : ''}`}>
 
                 {/* LEFT PANEL: IMMUTABLE INVOICE PASS */}
-                <div className="md:col-span-5 bg-gradient-to-b from-slate-900 to-slate-950 p-6 md:p-8 border-b md:border-b-0 md:border-r border-slate-800 flex flex-col justify-between">
+                <div className="md:col-span-5 bg-slate-50 p-6 md:p-8 border-b md:border-b-0 md:border-r border-slate-200 flex flex-col justify-between">
                     <div>
-                        <div className="flex items-center gap-2 mb-6">
-                            <span className="p-2 rounded-lg bg-indigo-600/10 text-indigo-400 font-bold text-sm">EM</span>
-                            <span className="text-sm font-semibold uppercase tracking-wider text-slate-400">EduMate Order Hub</span>
+                        <div className="flex items-center gap-2 mb-8">
+                            <span className="p-2 rounded-lg bg-indigo-600 text-white font-bold text-xs tracking-wider">EM</span>
+                            <span className="text-xs font-bold uppercase tracking-widest text-slate-500">EduMate Order Hub</span>
                         </div>
 
-                        <h2 className="text-xl font-bold tracking-tight text-white mb-1">Selected Access Pass</h2>
-                        <p className="text-xs text-slate-400 mb-6">These parameters are system-locked and secure.</p>
+                        <h2 className="text-xl font-bold text-slate-900 tracking-tight mb-1">Selected Access Pass</h2>
+                        <p className="text-xs text-slate-500 mb-6">These parameters are securely locked to your session.</p>
 
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-[11px] uppercase tracking-wider text-slate-500 font-medium mb-1">Target Tier</label>
+                                <label className="block text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1.5">Target Tier</label>
                                 <span className={`inline-block px-3 py-1 text-xs font-bold rounded-full uppercase border ${getPlanBadgeStyles()}`}>
                                     {planType === "edu" ? "Campus Institutional" : planType === "premium" ? "Professional" : "Basic Free"}
                                 </span>
                             </div>
 
-                            <div className="border-t border-slate-800/60 pt-3">
-                                <label className="block text-[11px] uppercase tracking-wider text-slate-500 font-medium">Account Email</label>
-                                <p className="text-sm font-semibold text-slate-300 break-all">{userEmail || "N/A"}</p>
-                                <p className="text-[10px] text-slate-500 mt-0.5">ID Reference: #{userId || "N/A"}</p>
+                            <div className="border-t border-slate-200 pt-4">
+                                <label className="block text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-0.5">Account Email</label>
+                                <p className="text-sm font-semibold text-slate-800 break-all">{userEmail || "N/A"}</p>
+                                <p className="text-[10px] text-slate-400 mt-0.5">ID: #{userId || "N/A"}</p>
                             </div>
 
-                            <div className="border-t border-slate-800/60 pt-3 grid grid-cols-2 gap-4">
+                            <div className="border-t border-slate-200 pt-4 grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-[11px] uppercase tracking-wider text-slate-500 font-medium">Starts On</label>
-                                    <p className="text-sm font-semibold text-slate-300">{startDate || "Immediate"}</p>
+                                    <label className="block text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-0.5">Starts On</label>
+                                    <p className="text-xs font-semibold text-slate-700">{startDate || "Immediate"}</p>
                                 </div>
                                 <div>
-                                    <label className="block text-[11px] uppercase tracking-wider text-slate-500 font-medium">Valid Term</label>
-                                    <p className="text-sm font-semibold text-slate-300">{validPeriod || "N/A"}</p>
+                                    <label className="block text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-0.5">Valid Term</label>
+                                    <p className="text-xs font-semibold text-slate-700">{validPeriod || "N/A"}</p>
                                 </div>
                             </div>
 
-                            <div className="border-t border-slate-800/60 pt-3">
-                                <label className="block text-[11px] uppercase tracking-wider text-slate-500 font-medium">Expiration Threshold</label>
-                                <p className="text-sm font-semibold text-rose-400">{expireDate || "N/A"}</p>
+                            <div className="border-t border-slate-200 pt-4">
+                                <label className="block text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-0.5">Expiration Threshold</label>
+                                <p className="text-xs font-semibold text-rose-600">{expireDate || "N/A"}</p>
                             </div>
                         </div>
                     </div>
 
-                    <div className="mt-8 pt-4 border-t border-slate-800 text-[11px] text-slate-500">
-                        Secure transaction payload validation layer. EduMate &copy; {new Date().getFullYear()}
+                    <div className="mt-8 pt-4 border-t border-slate-200 text-[11px] text-slate-400 font-medium">
+                        EduMate Payment Validation Layer &copy; {new Date().getFullYear()}
                     </div>
                 </div>
 
                 {/* RIGHT PANEL: MUTABLE FORM INPUT SUBMISSION */}
-                <form onSubmit={handleSubmit} className="md:col-span-7 p-6 md:p-8 flex flex-col justify-between">
+                <form onSubmit={handleSubmit} className="md:col-span-7 p-6 md:p-8 flex flex-col justify-between bg-white">
                     <div>
-                        <h3 className="text-xl font-bold tracking-tight text-white mb-1">Verify Remittance</h3>
-                        <p className="text-xs text-slate-400 mb-6">Upload your bank deposit slip or transaction receipt summary below.</p>
+                        <h3 className="text-xl font-bold text-slate-900 tracking-tight mb-1">Verify Remittance</h3>
+                        <p className="text-xs text-slate-500 mb-6">Provide your transaction receipt context metrics to complete deployment setup.</p>
+
+                        {/* SAMPLE CSS RECEIPT PREVIEW DESIGN */}
+                        <div className="mb-6 border border-indigo-100 bg-indigo-50/30 rounded-xl p-4 relative overflow-hidden">
+                            <span className="absolute top-0 right-0 bg-indigo-100 text-indigo-700 text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-bl">
+                                Expected Structure
+                            </span>
+                            <p className="text-xs font-bold text-indigo-900 mb-2 flex items-center gap-1.5">
+                                <span>📋</span> Verification Reference Mapping Blueprint
+                            </p>
+
+                            <div className="bg-white border border-slate-200 rounded-lg p-3 font-mono text-[11px] text-slate-600 space-y-1.5 shadow-sm">
+                                <div className="flex justify-between border-b border-slate-100 pb-1 text-[10px] text-slate-400">
+                                    <span>OFFICIAL BANK RECEIPT</span>
+                                    <span className="text-emerald-600 font-sans font-bold">SUCCESS</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span>Bank:</span>
+                                    <span className="font-bold text-slate-900">BOC Bank - Sri Lanka</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span>Beneficiary Account:</span>
+                                    <span className="font-bold text-slate-900">4924086</span>
+                                </div>
+                                <div className="flex justify-between border-b border-slate-100 pb-1">
+                                    <span>Remittance Target:</span>
+                                    <span className="font-medium text-slate-700 uppercase">{planType} Plan Pack</span>
+                                </div>
+                                <div className="py-1.5 px-2 bg-slate-50 border border-dashed border-indigo-200 rounded text-center">
+                                    <span className="text-[9px] text-indigo-600 block font-sans uppercase font-bold tracking-wide">Required Transaction Remarks Memo:</span>
+                                    <span className="text-slate-800 font-semibold break-all text-xs">{userEmail || "your-account-email@domain.com"}</span>
+                                </div>
+                            </div>
+                        </div>
 
                         <div className="space-y-5">
                             {/* TRANSACTION REFERENCE INPUT */}
                             <div>
-                                <label htmlFor="reference" className="block text-xs font-semibold text-slate-300 mb-1.5">
+                                <label htmlFor="reference" className="block text-xs font-semibold text-slate-700 mb-1.5">
                                     Transaction Reference / Journal ID <span className="text-rose-500">*</span>
                                 </label>
                                 <input
@@ -259,40 +299,40 @@ function SubmitPlaneForm() {
                                     value={referenceId}
                                     onChange={(e) => setReferenceId(e.target.value)}
                                     placeholder="e.g. TXN-9827410924"
-                                    className="w-full px-4 py-2.5 bg-slate-900 border border-slate-800 rounded-lg text-slate-100 placeholder-slate-600 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
+                                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors shadow-sm"
                                 />
                             </div>
 
                             {/* RECEIPT FILE UPLOAD DRAG/DROP ZONE */}
                             <div>
-                                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                                    Upload Receipt Document <span className="text-rose-500">*</span>
+                                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                                    Upload Completed Bank Receipt <span className="text-rose-500">*</span>
                                 </label>
-                                <div className="border-2 border-dashed border-slate-800 hover:border-slate-700 bg-slate-900/50 rounded-xl p-6 text-center transition-colors relative">
+                                <div className="border-2 border-dashed border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/10 bg-slate-50/50 rounded-xl p-6 text-center transition-all relative group cursor-pointer">
                                     <input
                                         type="file"
                                         required
                                         accept="image/*,application/pdf"
                                         onChange={handleFileChange}
-                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                     />
                                     <div className="space-y-2">
-                                        <div className="text-2xl">📁</div>
-                                        <p className="text-xs text-slate-300 font-medium">
-                                            {file ? "Change selected file" : "Drag & drop file or click to browse"}
+                                        <div className="text-2xl group-hover:scale-110 transition-transform duration-200">📤</div>
+                                        <p className="text-xs text-slate-700 font-medium">
+                                            {file ? "Replace selected document" : "Drag & drop file or click to browse layout"}
                                         </p>
-                                        <p className="text-[11px] text-slate-500">Supports PDF, PNG, JPG, JPEG formats</p>
+                                        <p className="text-[11px] text-slate-400">Supports PDF, PNG, JPG, JPEG asset variants</p>
                                     </div>
                                 </div>
 
                                 {/* FILE SUFFIX CHIP */}
                                 {file && (
-                                    <div className="mt-3 flex items-center justify-between bg-slate-900 border border-indigo-500/20 px-3 py-2 rounded-lg">
+                                    <div className="mt-3 flex items-center justify-between bg-emerald-50/50 border border-emerald-200 px-3 py-2 rounded-xl">
                                         <div className="flex items-center gap-2 truncate">
-                                            <span className="text-indigo-400 text-xs">✔</span>
-                                            <span className="text-xs text-slate-300 font-medium truncate">{file.name}</span>
+                                            <span className="text-emerald-600 text-xs font-bold">✓</span>
+                                            <span className="text-xs text-emerald-800 font-medium truncate">{file.name}</span>
                                         </div>
-                                        <span className="text-[10px] text-slate-500 shrink-0 font-mono">
+                                        <span className="text-[10px] text-emerald-600 shrink-0 font-mono bg-white px-1.5 py-0.5 rounded border border-emerald-100">
                                             {(file.size / 1024 / 1024).toFixed(2)} MB
                                         </span>
                                     </div>
@@ -306,12 +346,12 @@ function SubmitPlaneForm() {
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-800 disabled:text-slate-500 text-white font-semibold py-3 px-4 rounded-lg text-sm shadow-md transition-colors flex items-center justify-center gap-2"
+                            className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-100 disabled:text-slate-400 text-white font-semibold py-3 px-4 rounded-xl text-sm shadow-md shadow-indigo-600/10 transition-colors flex items-center justify-center gap-2"
                         >
                             {isSubmitting ? (
                                 <>
-                                    <span className="w-4 h-4 border-2 border-slate-400 border-t-white rounded-full animate-spin"></span>
-                                    Processing Order Securely...
+                                    <span className="w-4 h-4 border-2 border-slate-300 border-t-white rounded-full animate-spin"></span>
+                                    Processing Secure Handshake...
                                 </>
                             ) : (
                                 "Complete Verification Submission"
@@ -327,7 +367,7 @@ function SubmitPlaneForm() {
 
 export default function SubmitPlanePage() {
     return (
-        <Suspense fallback={<div className="min-h-screen bg-slate-900 flex items-center justify-center text-slate-400">Loading billing context validation module...</div>}>
+        <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center text-slate-400">Loading order configuration engine...</div>}>
             <SubmitPlaneForm />
         </Suspense>
     );
