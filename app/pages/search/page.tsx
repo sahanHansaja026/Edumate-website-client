@@ -29,6 +29,7 @@ export default function ModuleSearchPage() {
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
     const [allTags, setAllTags] = useState<string[]>([]);
+    const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
     // -----------------------------
     // FETCH MODULES & STATIC TAGS
@@ -36,23 +37,37 @@ export default function ModuleSearchPage() {
     useEffect(() => {
         const fetchModules = async () => {
             setLoading(true);
+            setErrorMsg(null);
 
             try {
                 const params = new URLSearchParams();
                 if (searchQuery) params.append("search", searchQuery);
 
-                // 🔥 Fixed: Appends tags sequentially for FastAPI List parsing
+                // Appends tags sequentially for FastAPI List parsing
                 selectedTags.forEach(tag => params.append("tags", tag));
 
-                const res = await fetch(
-                    `https://www.edumate.sbs/modules_search?${params.toString()}`
-                );
+                // Formulate the endpoint cleanly using your configured API base
+                const cleanBase = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
+                const res = await fetch(`${cleanBase}/modules_search?${params.toString()}`);
+
+                // Check for server-side errors (404, 500, etc.)
+                if (!res.ok) {
+                    throw new Error(`Server status returned ${res.status}`);
+                }
+
+                // Verify the response content type before parsing JSON
+                const contentType = res.headers.get("content-type");
+                if (!contentType || !contentType.includes("application/json")) {
+                    const htmlFallback = await res.text();
+                    console.error("Expected JSON, received HTML payload instead:", htmlFallback);
+                    throw new TypeError("Received an invalid response format (HTML) from the server endpoint.");
+                }
 
                 const data = await res.json();
                 const list = data.data || [];
                 setModules(list);
 
-                // 🔥 Fixed: Safely compute distinct tags using a functional state check to avoid re-renders
+                // Safely compute distinct tags using a functional state check to avoid re-renders
                 setAllTags(prevTags => {
                     if (prevTags.length > 0) return prevTags;
                     const tagsSet = new Set<string>();
@@ -61,8 +76,9 @@ export default function ModuleSearchPage() {
                     });
                     return Array.from(tagsSet);
                 });
-            } catch (err) {
-                console.error(err);
+            } catch (err: any) {
+                console.error("Fetch Exception caught:", err);
+                setErrorMsg(err.message || "An unexpected network error occurred.");
                 setModules([]);
             } finally {
                 setLoading(false);
@@ -71,7 +87,7 @@ export default function ModuleSearchPage() {
 
         const timer = setTimeout(fetchModules, 300);
         return () => clearTimeout(timer);
-    }, [searchQuery, selectedTags]); // 🔥 Removed allTags.length dependency to break the infinite loop
+    }, [searchQuery, selectedTags]); // Removed allTags.length dependency to prevent structural re-renders
 
     const toggleTag = (tag: string) => {
         setSelectedTags(prev =>
@@ -204,6 +220,14 @@ export default function ModuleSearchPage() {
                                     </div>
                                 ))}
                             </div>
+                        ) : errorMsg ? (
+                            <div className="text-center py-12 border border-red-100 rounded-xl bg-red-50/30 max-w-xl mx-auto px-4">
+                                <p className="text-sm font-medium text-red-800">Connection Failed</p>
+                                <p className="text-xs text-red-600/80 mt-1">{errorMsg}</p>
+                                <p className="text-xs text-zinc-500 mt-4">
+                                    Double-check if your backend service is running and endpoints are configured to route queries properly.
+                                </p>
+                            </div>
                         ) : modules.length === 0 ? (
                             <div className="text-center py-16 border border-dashed border-zinc-200 rounded-xl bg-zinc-50/50">
                                 <Compass className="mx-auto text-zinc-300 stroke-[1.5]" size={36} />
@@ -214,7 +238,7 @@ export default function ModuleSearchPage() {
                                 {(searchQuery || selectedTags.length > 0) && (
                                     <button
                                         onClick={clearFilters}
-                                        className="mt-4 text-xs font-medium inline-flex items-center justify-center px-3 py-1.5 bg-white border border-zinc-200 hover:border-zinc-300 rounded-lg transition"
+                                        className="mt-4 text-xs font-medium text-zinc-900 bg-white border border-zinc-200 px-3 py-1.5 rounded-lg hover:bg-zinc-50 active:bg-zinc-100 transition"
                                     >
                                         Reset Filters
                                     </button>
@@ -223,68 +247,66 @@ export default function ModuleSearchPage() {
                         ) : (
                             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {modules.map((m) => (
-                                    <Link
-                                        key={`${m.type}-${m.module_id}`}
-                                        href={`/enrolle/${m.module_id}`}
-                                        className="group relative flex flex-col justify-between p-5 bg-white border border-zinc-200 hover:border-zinc-400 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.03)] transition-all duration-200 cursor-pointer"
+                                    <div
+                                        key={m.module_id}
+                                        className="border border-zinc-100 hover:border-zinc-200 rounded-xl p-5 bg-white shadow-sm hover:shadow-md/5 transition flex flex-col justify-between group"
                                     >
                                         <div>
-                                            <div className="flex items-center justify-between gap-2 mb-3">
-                                                <span className={`inline-flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md ${m.type === "channel_module"
-                                                    ? "bg-zinc-100 text-zinc-800"
-                                                    : "bg-zinc-50 text-zinc-600 border border-zinc-200/60"
+                                            <div className="flex items-start justify-between gap-2 mb-1.5">
+                                                <h3 className="font-medium text-zinc-900 text-sm group-hover:text-zinc-700 line-clamp-1 transition">
+                                                    {m.name}
+                                                </h3>
+                                                <span className={`text-[10px] font-medium tracking-wide uppercase px-1.5 py-0.5 rounded ${m.type === "channel_module"
+                                                    ? "bg-indigo-50 text-indigo-600"
+                                                    : "bg-amber-50 text-amber-600"
                                                     }`}>
-                                                    <Layers size={10} />
                                                     {m.type === "channel_module" ? "Channel" : "Standard"}
                                                 </span>
-                                                <ExternalLink size={14} className="text-zinc-300 group-hover:text-zinc-500 transition-colors" />
                                             </div>
 
-                                            <h3 className="font-medium text-sm text-zinc-900 group-hover:text-black tracking-tight line-clamp-1 mb-1">
-                                                {m.name}
-                                            </h3>
-
                                             {m.owner && (
-                                                <div className="flex items-center gap-1.5 text-xs text-zinc-400 mb-3">
-                                                    <User size={12} className="shrink-0" />
+                                                <div className="flex items-center gap-1 text-zinc-400 mb-3 text-xs">
+                                                    <User size={12} />
                                                     <span className="truncate">
-                                                        {m.owner.first_name || m.owner.last_name
-                                                            ? `${m.owner.first_name || ""} ${m.owner.last_name || ""}`.trim()
-                                                            : m.owner.email
-                                                        }
+                                                        {m.owner.first_name ? `${m.owner.first_name} ${m.owner.last_name || ""}` : m.owner.email}
                                                     </span>
                                                 </div>
                                             )}
 
-                                            {m.description && (
-                                                <p className="text-xs text-zinc-500 line-clamp-2 leading-relaxed mb-4">
-                                                    {m.description}
-                                                </p>
-                                            )}
+                                            <p className="text-xs text-zinc-500 line-clamp-2 leading-relaxed mb-4">
+                                                {m.description || "No description provided for this module."}
+                                            </p>
                                         </div>
 
-                                        {m.skills && m.skills.length > 0 && (
-                                            <div className="flex flex-wrap gap-1 pt-3 border-t border-zinc-100/80">
-                                                {m.skills.slice(0, 3).map((skill, idx) => (
-                                                    <span
-                                                        key={idx}
-                                                        className="text-[11px] bg-zinc-50 text-zinc-600 px-2 py-0.5 rounded-md border border-zinc-100"
-                                                    >
-                                                        {skill}
-                                                    </span>
-                                                ))}
-                                                {m.skills.length > 3 && (
-                                                    <span className="text-[10px] text-zinc-400 self-center font-medium pl-1">
-                                                        +{m.skills.length - 3} more
-                                                    </span>
-                                                )}
-                                            </div>
-                                        )}
-                                    </Link>
+                                        <div>
+                                            {m.skills && m.skills.length > 0 && (
+                                                <div className="flex flex-wrap gap-1 mb-4">
+                                                    {m.skills.slice(0, 3).map((skill, index) => (
+                                                        <span key={index} className="text-[10px] bg-zinc-50 border border-zinc-100 text-zinc-600 px-1.5 py-0.5 rounded">
+                                                            {skill}
+                                                        </span>
+                                                    ))}
+                                                    {m.skills.length > 3 && (
+                                                        <span className="text-[10px] text-zinc-400 font-medium pl-0.5 self-center">
+                                                            +{m.skills.length - 3} more
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            <Link
+                                                href={`/modules/${m.module_id}`}
+                                                className="w-full inline-flex items-center justify-center gap-1 text-xs font-medium text-zinc-700 bg-zinc-50 group-hover:bg-zinc-900 group-hover:text-white border border-zinc-100 group-hover:border-zinc-900 py-1.5 px-3 rounded-lg transition-all"
+                                            >
+                                                View Module <ExternalLink size={12} className="opacity-60 group-hover:opacity-100" />
+                                            </Link>
+                                        </div>
+                                    </div>
                                 ))}
                             </div>
                         )}
                     </main>
+
                 </div>
             </div>
         </div>
