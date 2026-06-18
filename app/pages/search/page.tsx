@@ -2,9 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { Search, X, Compass, Tag, Layers, User, ExternalLink, SlidersHorizontal } from "lucide-react";
-import { API_BASE_URL } from "@/app/config/api";
-// 1. Import the Link component from Next.js
 import Link from "next/link";
+import { API_BASE_URL } from "@/app/config/api";
 
 interface Owner {
     email: string;
