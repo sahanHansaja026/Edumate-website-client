@@ -43,7 +43,7 @@ export default function ModuleSearchPage() {
                 selectedTags.forEach(tag => params.append("tag", tag));
 
                 const res = await fetch(
-                    `${API_BASE_URL}//modules_search?${params.toString()}`
+                    `${API_BASE_URL}/modules_search?${params.toString()}`
                 );
 
                 const data = await res.json();
