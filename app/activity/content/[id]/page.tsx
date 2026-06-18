@@ -109,7 +109,7 @@ export default function ViewContentPage() {
                         {/* CHANGED: Added status check to prevent downloading if expired/locked */}
                         {content.allow_download && content.file_path && status === "AVAILABLE" && (
                             <a
-                                href={content.file_path.startsWith("http") ? content.file_path : `${API_BASE_URL}/${content.file_path}`}
+                                href={content.file_path.startsWith("https") ? content.file_path : `${API_BASE_URL}/${content.file_path}`}
                                 download
                                 className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest border border-gray-900 px-4 py-2 hover:bg-gray-900 hover:text-white transition"
                             >
