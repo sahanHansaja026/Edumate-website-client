@@ -40,7 +40,9 @@ export default function ModuleSearchPage() {
             try {
                 const params = new URLSearchParams();
                 if (searchQuery) params.append("search", searchQuery);
-                selectedTags.forEach(tag => params.append("tag", tag));
+
+                // 🔥 Fixed: Appends tags sequentially for FastAPI List parsing
+                selectedTags.forEach(tag => params.append("tags", tag));
 
                 const res = await fetch(
                     `${API_BASE_URL}/modules_search?${params.toString()}`
@@ -50,14 +52,15 @@ export default function ModuleSearchPage() {
                 const list = data.data || [];
                 setModules(list);
 
-                // Populate initial tags only if they haven't been loaded yet 
-                if (allTags.length === 0 && list.length > 0) {
-                    const tags = new Set<string>();
+                // 🔥 Fixed: Safely compute distinct tags using a functional state check to avoid re-renders
+                setAllTags(prevTags => {
+                    if (prevTags.length > 0) return prevTags;
+                    const tagsSet = new Set<string>();
                     list.forEach((m: Module) => {
-                        m.skills?.forEach(skill => tags.add(skill));
+                        m.skills?.forEach(skill => tagsSet.add(skill));
                     });
-                    setAllTags(Array.from(tags));
-                }
+                    return Array.from(tagsSet);
+                });
             } catch (err) {
                 console.error(err);
                 setModules([]);
@@ -68,7 +71,7 @@ export default function ModuleSearchPage() {
 
         const timer = setTimeout(fetchModules, 300);
         return () => clearTimeout(timer);
-    }, [searchQuery, selectedTags, allTags.length]);
+    }, [searchQuery, selectedTags]); // 🔥 Removed allTags.length dependency to break the infinite loop
 
     const toggleTag = (tag: string) => {
         setSelectedTags(prev =>
@@ -220,14 +223,12 @@ export default function ModuleSearchPage() {
                         ) : (
                             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {modules.map((m) => (
-                                    // 2. Changed <div> to NextJS <Link> and added the href attribute
                                     <Link
                                         key={`${m.type}-${m.module_id}`}
                                         href={`/enrolle/${m.module_id}`}
                                         className="group relative flex flex-col justify-between p-5 bg-white border border-zinc-200 hover:border-zinc-400 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.03)] transition-all duration-200 cursor-pointer"
                                     >
                                         <div>
-                                            {/* TYPE ICON & UPPER ROW */}
                                             <div className="flex items-center justify-between gap-2 mb-3">
                                                 <span className={`inline-flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md ${m.type === "channel_module"
                                                     ? "bg-zinc-100 text-zinc-800"
@@ -239,12 +240,10 @@ export default function ModuleSearchPage() {
                                                 <ExternalLink size={14} className="text-zinc-300 group-hover:text-zinc-500 transition-colors" />
                                             </div>
 
-                                            {/* TITLE */}
                                             <h3 className="font-medium text-sm text-zinc-900 group-hover:text-black tracking-tight line-clamp-1 mb-1">
                                                 {m.name}
                                             </h3>
 
-                                            {/* OWNER */}
                                             {m.owner && (
                                                 <div className="flex items-center gap-1.5 text-xs text-zinc-400 mb-3">
                                                     <User size={12} className="shrink-0" />
@@ -257,7 +256,6 @@ export default function ModuleSearchPage() {
                                                 </div>
                                             )}
 
-                                            {/* DESCRIPTION */}
                                             {m.description && (
                                                 <p className="text-xs text-zinc-500 line-clamp-2 leading-relaxed mb-4">
                                                     {m.description}
@@ -265,7 +263,6 @@ export default function ModuleSearchPage() {
                                             )}
                                         </div>
 
-                                        {/* TAGS FOOTER */}
                                         {m.skills && m.skills.length > 0 && (
                                             <div className="flex flex-wrap gap-1 pt-3 border-t border-zinc-100/80">
                                                 {m.skills.slice(0, 3).map((skill, idx) => (
