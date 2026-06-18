@@ -168,7 +168,7 @@ export default function Enrolle() {
             src={
               module.cover_image
                 ? `data:image/png;base64,${module.cover_image}`
-                : `http://127.0.0.1:8000/modules/${id}/image`
+                : `${API_BASE_URL}/modules/${id}/image`
             }
             className="w-full h-72 object-contain bg-gray-100 rounded-xl border shadow-sm"
             alt={module.name}

@@ -47,7 +47,7 @@ function ManualGradingContent() {
         const fetchData = async () => {
             try {
                 const res = await fetch(
-                    `http://localhost:8000/manual-grading/quiz/${quizId}/student/${studentId}`
+                    `${API_BASE_URL}/manual-grading/quiz/${quizId}/student/${studentId}`
                 );
                 const json = await res.json();
                 setData(json);
