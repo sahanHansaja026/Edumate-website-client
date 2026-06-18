@@ -45,7 +45,7 @@ export default function ModuleSearchPage() {
                 selectedTags.forEach(tag => params.append("tags", tag));
 
                 const res = await fetch(
-                    `${API_BASE_URL}/modules_search?${params.toString()}`
+                    `https://www.edumate.sbs/modules_search?${params.toString()}`
                 );
 
                 const data = await res.json();
